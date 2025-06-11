@@ -12,10 +12,10 @@ A Node.js and MySQL-based web application for managing visitor registration, tra
 
 🛠 Tech Stack
 
-- **Backend: Node.js, Express.js
-- **Database: MySQL
-- **Frontend: HTML + Tailwind CSS
-- **Email: Nodemailer (Gmail)
+- Backend: Node.js, Express.js
+- Database: MySQL
+- Frontend: HTML + Tailwind CSS
+- Email: Nodemailer (Gmail)
 
 ⚙️ Installation & Setup
 
