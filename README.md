@@ -28,22 +28,24 @@ A Node.js and MySQL-based web application for managing visitor registration, tra
     npm install
 
 3. Create the MySQL database
+
    CREATE DATABASE visitor_app;
    USE visitor_app;
    -- Paste content of mysql_schema.sql here or run:
    SOURCE mysql_schema.sql;
 
-4. Configure database connection
+5. Configure database connection
    Update the db.js file with your MySQL credentials.
 
-5. Setup Nodemailer
+6. Setup Nodemailer
    In routes/visitor.js, replace:
    
+
    user: 'your_email@gmail.com',
    pass: 'your_app_password'
    with your actual Gmail and app password (use Gmail App Passwords).
 
-6. Run the server
+7. Run the server
    npm run dev   # if you’re using nodemon
    or
    node server.js
