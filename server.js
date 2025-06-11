@@ -1,17 +1,27 @@
 const express = require('express');
-const app = express();
 const path = require('path');
-const bodyParser = require('body-parser');
+const config = require('./config');
 const visitorRoutes = require('./routes/visitor');
-const cors = require('cors');
-app.use(cors());
 
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
 
+// Set view engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Create uploads directory if it doesn't exist
+const fs = require('fs');
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Routes
 app.use('/', visitorRoutes);
 
 app.get('/', (req, res) => {
@@ -24,5 +34,14 @@ app.post('/submit', (req, res) => {
   res.send('Form submitted successfully');
 });
 
-const PORT = 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+const PORT = config.server.port || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Visit http://localhost:${PORT} to access the application`);
+});

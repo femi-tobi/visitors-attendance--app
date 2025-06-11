@@ -1,19 +1,279 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Visitor Form</title>
+  <title>Visitor Registration | Welcome</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100 p-4">
-  <div class="max-w-md mx-auto bg-white shadow p-6 rounded">
-    <form method="POST" action="/submit">
-      <input name="name" placeholder="Full Name" class="block w-full mb-2 p-2 border" required />
-      <input name="email" placeholder="Email" class="block w-full mb-2 p-2 border" required />
-      <input name="phone" placeholder="Phone Number" class="block w-full mb-2 p-2 border" required />
-      <input name="staff_email" placeholder="Staff Email" class="block w-full mb-2 p-2 border" required />
-      <textarea name="reason" placeholder="Reason for Visit" class="block w-full mb-4 p-2 border" required></textarea>
-      <button class="bg-blue-500 text-white px-4 py-2 rounded">Submit</button>
-    </form>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8" style="font-family: 'Inter', sans-serif;">
+  <div class="max-w-lg mx-auto">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">Visitor Registration</h2>
+      <p class="text-gray-600">Please fill in your details below</p>
+    </div>
+
+    <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+      <div class="p-8">
+        <!-- Search for returning visitors -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Returning Visitor?</label>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="visitorSearch" 
+              placeholder="Search by name or email" 
+              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+            <div id="searchResults" class="absolute z-10 w-full bg-white mt-1 rounded-md shadow-lg hidden"></div>
+          </div>
+        </div>
+
+        <!-- New Visitor Form -->
+        <form id="newVisitorForm" method="POST" action="/register/new" class="space-y-6 hidden">
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <input 
+              id="name"
+              name="name" 
+              type="text" 
+              required 
+              minlength="2"
+              placeholder="Enter your full name"
+              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+            <p class="mt-1 text-sm text-gray-500">Minimum 2 characters</p>
+          </div>
+
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <input 
+              id="email"
+              name="email" 
+              type="email" 
+              required 
+              placeholder="you@example.com"
+              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+
+          <div>
+            <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input 
+              id="phone"
+              name="phone" 
+              type="tel" 
+              required 
+              minlength="10"
+              pattern="[0-9+\-\s()]+"
+              placeholder="Enter your phone number"
+              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+            <p class="mt-1 text-sm text-gray-500">Enter at least 10 digits</p>
+          </div>
+
+          <div>
+            <label for="staff_email" class="block text-sm font-medium text-gray-700 mb-1">Staff Email</label>
+            <input 
+              id="staff_email"
+              name="staff_email" 
+              type="email" 
+              required 
+              placeholder="staff@company.com"
+              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+
+          <div>
+            <label for="reason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Visit</label>
+            <textarea 
+              id="reason"
+              name="reason" 
+              required 
+              minlength="5"
+              rows="4"
+              placeholder="Please describe the purpose of your visit"
+              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            ></textarea>
+            <p class="mt-1 text-sm text-gray-500">Minimum 5 characters</p>
+          </div>
+
+          <div class="pt-2">
+            <button 
+              type="submit"
+              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Register as New Visitor
+            </button>
+          </div>
+        </form>
+
+        <!-- Returning Visitor Form -->
+        <form id="returningVisitorForm" method="POST" action="/register/returning" class="space-y-6 hidden">
+          <input type="hidden" id="visitor_id" name="visitor_id">
+          
+          <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <h3 class="font-medium text-gray-900" id="visitor_name"></h3>
+            <p class="text-gray-600 text-sm" id="visitor_email"></p>
+            <p class="text-gray-600 text-sm" id="visitor_phone"></p>
+          </div>
+
+          <div>
+            <label for="returning_staff_email" class="block text-sm font-medium text-gray-700 mb-1">Staff Email</label>
+            <input 
+              id="returning_staff_email"
+              name="staff_email" 
+              type="email" 
+              required 
+              placeholder="staff@company.com"
+              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+          </div>
+
+          <div>
+            <label for="returning_reason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Visit</label>
+            <textarea 
+              id="returning_reason"
+              name="reason" 
+              required 
+              rows="4"
+              placeholder="Please describe the purpose of your visit"
+              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            ></textarea>
+          </div>
+
+          <div class="pt-2">
+            <button 
+              type="submit"
+              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Submit Visit Request
+            </button>
+          </div>
+        </form>
+
+        <!-- New Visitor Button -->
+        <div id="newVisitorButton" class="mt-4 text-center">
+          <button 
+            onclick="showNewVisitorForm()"
+            class="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Not found? Register as a new visitor
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <script>
+    const searchInput = document.getElementById('visitorSearch');
+    const searchResults = document.getElementById('searchResults');
+    const newVisitorForm = document.getElementById('newVisitorForm');
+    const returningVisitorForm = document.getElementById('returningVisitorForm');
+    const newVisitorButton = document.getElementById('newVisitorButton');
+    let debounceTimer;
+
+    // Show new visitor form
+    function showNewVisitorForm() {
+      newVisitorForm.classList.remove('hidden');
+      returningVisitorForm.classList.add('hidden');
+      newVisitorButton.classList.add('hidden');
+      searchInput.value = '';
+      searchResults.classList.add('hidden');
+    }
+
+    searchInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      const query = this.value.trim();
+      
+      if (query.length < 2) {
+        searchResults.innerHTML = '';
+        searchResults.classList.add('hidden');
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        try {
+          const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+          const data = await response.json();
+          
+          if (data.length > 0) {
+            searchResults.innerHTML = data.map(visitor => `
+              <div class="p-3 hover:bg-gray-100 cursor-pointer" onclick='fillVisitorData(${JSON.stringify(visitor).replace(/"/g, '&quot;')})'>
+                <div class="font-medium">${visitor.name}</div>
+                <div class="text-sm text-gray-600">${visitor.email}</div>
+              </div>
+            `).join('');
+            searchResults.classList.remove('hidden');
+          } else {
+            searchResults.innerHTML = '<div class="p-3 text-gray-500">No matching visitors found</div>';
+            searchResults.classList.remove('hidden');
+          }
+        } catch (error) {
+          console.error('Search failed:', error);
+        }
+      }, 300);
+    });
+
+    function fillVisitorData(visitor) {
+      document.getElementById('visitor_id').value = visitor.id;
+      document.getElementById('visitor_name').textContent = visitor.name;
+      document.getElementById('visitor_email').textContent = visitor.email;
+      document.getElementById('visitor_phone').textContent = visitor.phone;
+      
+      newVisitorForm.classList.add('hidden');
+      returningVisitorForm.classList.remove('hidden');
+      searchResults.classList.add('hidden');
+      newVisitorButton.classList.remove('hidden');
+    }
+
+    // Close search results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!searchResults.contains(e.target) && e.target !== searchInput) {
+        searchResults.classList.add('hidden');
+      }
+    });
+
+    // Form submission handling
+    [newVisitorForm, returningVisitorForm].forEach(form => {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        try {
+          console.log('Form data being sent:', Object.fromEntries(formData));
+          const response = await fetch(this.action, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams(formData)
+          });
+
+          const result = await response.json();
+          console.log('Server response:', result);
+          
+          if (result.success) {
+            alert('Registration successful! The staff member will be notified.');
+            form.reset();
+            location.reload();
+          } else {
+            let errorMessage = 'Registration failed. ';
+            if (result.errors && result.errors.length > 0) {
+              errorMessage += result.errors.map(e => e.msg).join('\n');
+            } else if (result.error) {
+              errorMessage += result.error;
+            } else {
+              errorMessage += 'Please try again.';
+            }
+            alert(errorMessage);
+          }
+        } catch (error) {
+          console.error('Submission error:', error);
+          alert('An error occurred. Please try again.');
+        }
+      });
+    });
+  </script>
 </body>
 </html>
