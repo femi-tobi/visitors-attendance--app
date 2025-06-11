@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Visitor Form</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-md mx-auto bg-white shadow p-6 rounded">
+    <form method="POST" action="/submit">
+      <input name="name" placeholder="Full Name" class="block w-full mb-2 p-2 border" required />
+      <input name="email" placeholder="Email" class="block w-full mb-2 p-2 border" required />
+      <input name="phone" placeholder="Phone Number" class="block w-full mb-2 p-2 border" required />
+      <input name="staff_email" placeholder="Staff Email" class="block w-full mb-2 p-2 border" required />
+      <textarea name="reason" placeholder="Reason for Visit" class="block w-full mb-4 p-2 border" required></textarea>
+      <button class="bg-blue-500 text-white px-4 py-2 rounded">Submit</button>
+    </form>
+  </div>
+</body>
+</html>
