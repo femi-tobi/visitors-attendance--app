@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Staff Management | Visitor Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen p-6" style="font-family: 'Inter', sans-serif;">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Staff Management</h1>
+      <a href="/admin/logout" class="text-red-600 hover:text-red-800">Logout</a>
+    </div>
+
+    <% if (locals.errors) { %>
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+        <% errors.forEach(function(error) { %>
+          <span class="block sm:inline"><%= error.msg %></span>
+        <% }); %>
+      </div>
+    <% } %>
+
+    <!-- Add Staff Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4"><%= locals.formData && formData.id ? 'Edit Staff Member' : 'Add New Staff Member' %></h2>
+      <form action="<%= locals.formData && formData.id ? `/admin/staff/${formData.id}` : '/admin/staff' %>" method="POST" class="space-y-4">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+          <input type="text" id="name" name="name" required
+                 value="<%= locals.formData ? formData.name : '' %>"
+                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+          <input type="email" id="email" name="email" required
+                 value="<%= locals.formData ? formData.email : '' %>"
+                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div>
+          <button type="submit" 
+                  class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <%= locals.formData && formData.id ? 'Update Staff Member' : 'Add Staff Member' %>
+          </button>
+          <% if (locals.formData && formData.id) { %>
+            <a href="/admin/staff" 
+               class="ml-2 text-gray-600 hover:text-gray-800">
+              Cancel Edit
+            </a>
+          <% } %>
+        </div>
+      </form>
+    </div>
+
+    <!-- Staff List -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% staff.forEach(function(member) { %>
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <%= member.name %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <%= member.email %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <a href="/admin/staff?edit=<%= member.id %>" 
+                   class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+                <form action="/admin/staff/<%= member.id %>/delete" method="POST" class="inline">
+                  <button type="submit" 
+                          class="text-red-600 hover:text-red-900"
+                          onclick="return confirm('Are you sure you want to delete this staff member?')">
+                    Delete
+                  </button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+          <% if (staff.length === 0) { %>
+            <tr>
+              <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                No staff members found
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html> 

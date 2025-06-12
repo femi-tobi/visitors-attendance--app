@@ -1,0 +1,1 @@
+ALTER TABLE visitors ADD COLUMN photo_path VARCHAR(255) AFTER phone; 
