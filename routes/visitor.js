@@ -5,6 +5,22 @@ const nodemailer = require('nodemailer');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const config = require('../config');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for handling file uploads
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Serve uploaded photos
+router.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -80,8 +96,28 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// Search staff members
+router.get('/search-staff', async (req, res) => {
+  try {
+    const query = req.query.query || '';
+    if (query.length < 2) {
+      return res.json([]);
+    }
+
+    const [staff] = await db.promise().query(
+      'SELECT name, email FROM staff WHERE name LIKE ? LIMIT 5',
+      [`%${query}%`]
+    );
+
+    res.json(staff);
+  } catch (error) {
+    console.error('Staff search error:', error);
+    res.status(500).json({ error: 'Staff search failed' });
+  }
+});
+
 // Register a new visitor
-router.post('/register/new', validateNewVisitor, async (req, res) => {
+router.post('/register/new', upload.none(), validateNewVisitor, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -94,65 +130,98 @@ router.post('/register/new', validateNewVisitor, async (req, res) => {
     }
 
     console.log('Received registration data:', req.body);
-    const { name, email, phone, reason, staff_email } = req.body;
+    const { name, email, phone, reason, staff_email, photo } = req.body;
 
     // Check if any required fields are missing
-    if (!name || !email || !phone || !reason || !staff_email) {
+    if (!name || !email || !phone || !reason || !staff_email || !photo) {
       return res.status(400).json({
         success: false,
-        error: 'All fields are required'
+        error: 'All fields including photo are required'
       });
     }
 
-    // Check if visitor already exists
-    const [existingVisitor] = await db.promise().query(
-      'SELECT id FROM visitors WHERE email = ?',
-      [email]
-    );
-    console.log('Existing visitor check:', existingVisitor);
-
-    let visitorId;
-    if (existingVisitor.length) {
-      visitorId = existingVisitor[0].id;
-      console.log('Updating existing visitor:', visitorId);
-      // Update visitor info
-      await db.promise().query(
-        'UPDATE visitors SET name = ?, phone = ? WHERE id = ?',
-        [name, phone, visitorId]
-      );
-    } else {
-      console.log('Creating new visitor');
-      // Create new visitor
-      const [result] = await db.promise().query(
-        'INSERT INTO visitors(name, email, phone) VALUES (?, ?, ?)',
-        [name, email, phone]
-      );
-      visitorId = result.insertId;
-      console.log('New visitor created with ID:', visitorId);
+    // Validate base64 image
+    if (!photo.startsWith('data:image/')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid image format. Please provide a valid image.'
+      });
     }
 
-    // Create visit record
-    console.log('Creating visit record');
-    await db.promise().query(
-      'INSERT INTO visits(visitor_id, staff_email, reason) VALUES (?, ?, ?)',
-      [visitorId, staff_email, reason]
-    );
+    // Save photo
+    const photoData = photo.replace(/^data:image\/\w+;base64,/, '');
+    try {
+      const photoBuffer = Buffer.from(photoData, 'base64');
+      if (photoBuffer.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid image data. Please take a photo again.'
+        });
+      }
+      const photoFileName = `${Date.now()}-${email.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
+      const photoPath = path.join(uploadsDir, photoFileName);
+      
+      await fs.promises.writeFile(photoPath, photoBuffer);
+      const publicPhotoPath = `/uploads/${photoFileName}`;
 
-    // Skip email sending for now to isolate the issue
-    /*
-    // Send email
-    const mailOptions = {
-      from: process.env.EMAIL_USER || 'your-email@gmail.com',
-      to: staff_email,
-      subject: 'New Visitor Request',
-      html: `...`
-    };
+      // Check if visitor already exists
+      const [existingVisitor] = await db.promise().query(
+        'SELECT id FROM visitors WHERE email = ?',
+        [email]
+      );
+      console.log('Existing visitor check:', existingVisitor);
 
-    await transporter.sendMail(mailOptions);
-    */
-    
-    console.log('Registration successful');
-    res.json({ success: true, message: 'Registration successful' });
+      let visitorId;
+      if (existingVisitor.length) {
+        visitorId = existingVisitor[0].id;
+        console.log('Updating existing visitor:', visitorId);
+        // Update visitor info
+        await db.promise().query(
+          'UPDATE visitors SET name = ?, phone = ?, photo_path = ? WHERE id = ?',
+          [name, phone, publicPhotoPath, visitorId]
+        );
+      } else {
+        console.log('Creating new visitor');
+        // Create new visitor
+        const [result] = await db.promise().query(
+          'INSERT INTO visitors(name, email, phone, photo_path) VALUES (?, ?, ?, ?)',
+          [name, email, phone, publicPhotoPath]
+        );
+        visitorId = result.insertId;
+        console.log('New visitor created with ID:', visitorId);
+      }
+
+      // Create visit record
+      console.log('Creating visit record');
+      await db.promise().query(
+        'INSERT INTO visits(visitor_id, staff_email, reason) VALUES (?, ?, ?)',
+        [visitorId, staff_email, reason]
+      );
+
+      // Skip email sending for now to isolate the issue
+      /*
+      // Send email
+      const mailOptions = {
+        from: process.env.EMAIL_USER || 'your-email@gmail.com',
+        to: staff_email,
+        subject: 'New Visitor Request',
+        html: `...`
+      };
+
+      await transporter.sendMail(mailOptions);
+      */
+      
+      console.log('Registration successful');
+      res.json({ success: true, message: 'Registration successful' });
+    } catch (error) {
+      console.error('Detailed registration error:', {
+        message: error.message,
+        stack: error.stack,
+        sqlMessage: error.sqlMessage,
+        code: error.code
+      });
+      res.status(500).json({ error: 'Registration failed: ' + error.message });
+    }
   } catch (error) {
     console.error('Detailed registration error:', {
       message: error.message,
