@@ -4,6 +4,7 @@
   <title>Visitor Registration | Welcome</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="/css/webcam.css" rel="stylesheet">
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8" style="font-family: 'Inter', sans-serif;">
   <div class="max-w-lg mx-auto">
@@ -30,6 +31,19 @@
 
         <!-- New Visitor Form -->
         <form id="newVisitorForm" method="POST" action="/register/new" class="space-y-6 hidden">
+          <!-- Webcam Component -->
+          <div class="webcam-container">
+            <video id="webcam" class="webcam-video" autoplay playsinline></video>
+            <canvas id="canvas" class="webcam-canvas"></canvas>
+            <div class="mt-4">
+              <button type="button" id="captureBtn" class="webcam-button capture-button">Take Photo</button>
+              <button type="button" id="retakeBtn" class="webcam-button retake-button">Retake Photo</button>
+            </div>
+            <div id="webcamError" class="webcam-error">
+              Unable to access webcam. Please ensure you have given camera permissions.
+            </div>
+          </div>
+
           <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
             <input 
@@ -72,15 +86,24 @@
           </div>
 
           <div>
-            <label for="staff_email" class="block text-sm font-medium text-gray-700 mb-1">Staff Email</label>
-            <input 
-              id="staff_email"
-              name="staff_email" 
-              type="email" 
-              required 
-              placeholder="staff@company.com"
-              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+            <label for="staff_name" class="block text-sm font-medium text-gray-700 mb-1">Staff Name</label>
+            <div class="relative">
+              <input 
+                id="staff_name"
+                type="text" 
+                required 
+                placeholder="Enter staff name"
+                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+              <input 
+                id="staff_email"
+                name="staff_email" 
+                type="hidden" 
+                required
+              >
+              <div id="staffSearchResults" class="absolute z-10 w-full bg-white mt-1 rounded-md shadow-lg hidden">
+              </div>
+            </div>
           </div>
 
           <div>
@@ -164,6 +187,7 @@
     </div>
   </div>
 
+  <script src="/js/webcam.js"></script>
   <script>
     const searchInput = document.getElementById('visitorSearch');
     const searchResults = document.getElementById('searchResults');
@@ -171,14 +195,25 @@
     const returningVisitorForm = document.getElementById('returningVisitorForm');
     const newVisitorButton = document.getElementById('newVisitorButton');
     let debounceTimer;
+    let webcamCapture;
 
-    // Show new visitor form
+    // Initialize webcam when showing new visitor form
     function showNewVisitorForm() {
       newVisitorForm.classList.remove('hidden');
       returningVisitorForm.classList.add('hidden');
       newVisitorButton.classList.add('hidden');
       searchInput.value = '';
       searchResults.classList.add('hidden');
+
+      // Initialize webcam
+      if (!webcamCapture) {
+        webcamCapture = new WebcamCapture(
+          document.getElementById('webcam'),
+          document.getElementById('canvas'),
+          document.getElementById('captureBtn'),
+          document.getElementById('retakeBtn')
+        );
+      }
     }
 
     searchInput.addEventListener('input', function() {
@@ -233,21 +268,27 @@
       }
     });
 
-    // Form submission handling
+    // Modify form submission to include photo
     [newVisitorForm, returningVisitorForm].forEach(form => {
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
 
+        // Add photo data if it's the new visitor form and photo is taken
+        if (this.id === 'newVisitorForm' && webcamCapture) {
+          const photoData = webcamCapture.getImageData();
+          if (!photoData) {
+            alert('Please take a photo before submitting.');
+            return;
+          }
+          formData.append('photo', photoData);
+        }
+
         try {
           console.log('Form data being sent:', Object.fromEntries(formData));
           const response = await fetch(this.action, {
             method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams(formData)
+            body: formData  // Send formData directly without URLSearchParams
           });
 
           const result = await response.json();
@@ -273,6 +314,59 @@
           alert('An error occurred. Please try again.');
         }
       });
+    });
+
+    // Staff search functionality
+    const staffNameInput = document.getElementById('staff_name');
+    const staffEmailInput = document.getElementById('staff_email');
+    const staffSearchResults = document.getElementById('staffSearchResults');
+    let staffDebounceTimer;
+
+    staffNameInput.addEventListener('input', function() {
+      clearTimeout(staffDebounceTimer);
+      const query = this.value.trim();
+      
+      if (query.length < 2) {
+        staffSearchResults.innerHTML = '';
+        staffSearchResults.classList.add('hidden');
+        staffEmailInput.value = '';
+        return;
+      }
+
+      staffDebounceTimer = setTimeout(async () => {
+        try {
+          const response = await fetch(`/search-staff?query=${encodeURIComponent(query)}`);
+          const data = await response.json();
+          
+          if (data.length > 0) {
+            staffSearchResults.innerHTML = data.map(staff => `
+              <div class="p-3 hover:bg-gray-100 cursor-pointer" onclick='selectStaff(${JSON.stringify(staff).replace(/"/g, '&quot;')})'>
+                <div class="font-medium">${staff.name}</div>
+                <div class="text-sm text-gray-600">${staff.email}</div>
+              </div>
+            `).join('');
+            staffSearchResults.classList.remove('hidden');
+          } else {
+            staffSearchResults.innerHTML = '<div class="p-3 text-gray-500">No matching staff found</div>';
+            staffSearchResults.classList.remove('hidden');
+          }
+        } catch (error) {
+          console.error('Staff search failed:', error);
+        }
+      }, 300);
+    });
+
+    function selectStaff(staff) {
+      staffNameInput.value = staff.name;
+      staffEmailInput.value = staff.email;
+      staffSearchResults.classList.add('hidden');
+    }
+
+    // Close staff search results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!staffSearchResults.contains(e.target) && e.target !== staffNameInput) {
+        staffSearchResults.classList.add('hidden');
+      }
     });
   </script>
 </body>
