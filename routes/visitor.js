@@ -198,18 +198,34 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
         [visitorId, staff_email, reason]
       );
 
-      // Skip email sending for now to isolate the issue
-      /*
       // Send email
       const mailOptions = {
         from: process.env.EMAIL_USER || 'your-email@gmail.com',
         to: staff_email,
         subject: 'New Visitor Request',
-        html: `...`
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>New Visitor Request</h2>
+            <p><strong>${name}</strong> would like to meet with you.</p>
+            <p><strong>Contact:</strong><br>
+            Email: ${email}<br>
+            Phone: ${phone}</p>
+            <p><strong>Reason:</strong><br>${reason}</p>
+            <div style="margin: 30px 0;">
+              <a href="${process.env.BASE_URL || 'http://localhost:3000'}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
+                 style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
+                 ✅ Allow
+              </a>
+              <a href="${process.env.BASE_URL || 'http://localhost:3000'}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
+                 style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                 ❌ Deny
+              </a>
+            </div>
+          </div>
+        `
       };
 
       await transporter.sendMail(mailOptions);
-      */
       
       console.log('Registration successful');
       res.json({ success: true, message: 'Registration successful' });
@@ -303,10 +319,70 @@ router.get('/respond', async (req, res) => {
       return res.status(400).send("Invalid response link.");
     }
 
+    // Update visit status
     await db.promise().query(
       'UPDATE visits SET status = ? WHERE staff_email = ? ORDER BY id DESC LIMIT 1',
       [status, email]
     );
+
+    // Get visitor details to send notification
+    const [visitDetails] = await db.promise().query(`
+      SELECT v.name, v.email, v.phone, vs.reason, vs.staff_email
+      FROM visits vs 
+      JOIN visitors v ON vs.visitor_id = v.id 
+      WHERE vs.staff_email = ? 
+      ORDER BY vs.id DESC 
+      LIMIT 1
+    `, [email]);
+
+    if (visitDetails.length > 0) {
+      const visitor = visitDetails[0];
+      const statusText = status === 'allowed' ? 'APPROVED' : 'DENIED';
+      const statusColor = status === 'allowed' ? '#4CAF50' : '#f44336';
+      const statusEmoji = status === 'allowed' ? '✅' : '❌';
+
+      // Send notification email to visitor
+      const visitorMailOptions = {
+        from: process.env.EMAIL_USER || 'your-email@gmail.com',
+        to: visitor.email,
+        subject: `Your Visit Request has been ${statusText}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>${statusEmoji} Visit Request ${statusText}</h2>
+            <p>Dear <strong>${visitor.name}</strong>,</p>
+            <p>Your visit request has been <strong style="color: ${statusColor};">${statusText}</strong>.</p>
+            
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h3>Visit Details:</h3>
+              <p><strong>Staff Member:</strong> ${visitor.staff_email}</p>
+              <p><strong>Reason for Visit:</strong> ${visitor.reason}</p>
+              <p><strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span></p>
+            </div>
+
+            ${status === 'allowed' ? `
+              <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3>Next Steps:</h3>
+                <p>You can now proceed to the reception desk for check-in. Please bring a valid ID.</p>
+              </div>
+            ` : `
+              <div style="background: #ffe8e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3>Next Steps:</h3>
+                <p>Please contact the staff member directly to discuss alternative arrangements.</p>
+              </div>
+            `}
+
+            <p>Thank you for using our visitor management system.</p>
+          </div>
+        `
+      };
+
+      try {
+        await transporter.sendMail(visitorMailOptions);
+        console.log(`Notification sent to visitor: ${visitor.email}`);
+      } catch (emailError) {
+        console.error('Error sending visitor notification:', emailError);
+      }
+    }
 
     res.render('response', { status });
   } catch (error) {
