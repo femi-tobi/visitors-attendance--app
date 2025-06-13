@@ -19,8 +19,6 @@ db.connect((err) => {
 
 module.exports = db;
 
-const mysql = require('mysql2');
-
 const connection = mysql.createConnection({
   host: 'tramway.proxy.rlwy.net',
   user: 'root',
