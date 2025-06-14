@@ -6,9 +6,9 @@ const config = require('../config');
 async function initializeDatabase() {
   // First connection to create database
   const initialConnection = mysql.createConnection({
-    host: config.db.host || 'localhost',
+    host: config.db.host || 'tramway.proxy.rlwy.net',
     user: config.db.user || 'root',
-    password: config.db.password || '',
+    password: config.db.password || 'qmXVvvEmWvavzTdcXiFdjqvILiVWWmMz',
     multipleStatements: true
   });
 
