@@ -314,6 +314,23 @@
     [newVisitorForm, returningVisitorForm].forEach(form => {
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
+        
+        // Additional validation for returning visitor form
+        if (this.id === 'returningVisitorForm') {
+          const staffEmail = document.getElementById('returning_staff_email').value;
+          const staffName = document.getElementById('returning_staff_name').value;
+          
+          if (!staffEmail || staffEmail.trim() === '') {
+            alert('Please select a staff member from the dropdown list.');
+            return;
+          }
+          
+          if (!staffName || staffName.trim() === '') {
+            alert('Please enter and select a staff member.');
+            return;
+          }
+        }
+        
         const formData = new FormData(this);
 
         // Add photo data if it's the new visitor form and photo is taken
@@ -402,6 +419,25 @@
       staffNameInput.value = staff.name;
       staffEmailInput.value = staff.email;
       staffSearchResults.classList.add('hidden');
+      
+      // Add visual feedback
+      staffNameInput.style.backgroundColor = '#f0f9ff';
+      staffNameInput.style.borderColor = '#3b82f6';
+      
+      // Add a small checkmark or success indicator
+      const successIndicator = document.createElement('span');
+      successIndicator.innerHTML = ' ✓';
+      successIndicator.style.color = '#10b981';
+      successIndicator.style.fontWeight = 'bold';
+      
+      // Remove any existing indicator
+      const existingIndicator = staffNameInput.parentNode.querySelector('.success-indicator');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+      
+      successIndicator.className = 'success-indicator';
+      staffNameInput.parentNode.appendChild(successIndicator);
     }
 
     // Close staff search results when clicking outside
@@ -455,6 +491,25 @@
       returningStaffNameInput.value = staff.name;
       returningStaffEmailInput.value = staff.email;
       returningStaffSearchResults.classList.add('hidden');
+      
+      // Add visual feedback
+      returningStaffNameInput.style.backgroundColor = '#f0f9ff';
+      returningStaffNameInput.style.borderColor = '#3b82f6';
+      
+      // Add a small checkmark or success indicator
+      const successIndicator = document.createElement('span');
+      successIndicator.innerHTML = ' ✓';
+      successIndicator.style.color = '#10b981';
+      successIndicator.style.fontWeight = 'bold';
+      
+      // Remove any existing indicator
+      const existingIndicator = returningStaffNameInput.parentNode.querySelector('.success-indicator');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+      
+      successIndicator.className = 'success-indicator';
+      returningStaffNameInput.parentNode.appendChild(successIndicator);
     }
 
     // Close returning staff search results when clicking outside

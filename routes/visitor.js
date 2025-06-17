@@ -262,9 +262,16 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
 // Register a returning visitor
 router.post('/register/returning', validateReturningVisitor, async (req, res) => {
   try {
+    console.log('Returning visitor registration data received:', req.body);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      console.log('Validation errors for returning visitor:', errors.array());
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array(),
+        message: 'Please check your input and try again.'
+      });
     }
 
     const { visitor_id, reason, staff_email } = req.body;
