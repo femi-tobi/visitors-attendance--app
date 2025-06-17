@@ -14,7 +14,8 @@ const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-console.log('BASE_URL used for email:', process.env.BASE_URL);
+
+console.log('Base URL configured for emails:', config.app.baseUrl);
 
 // Configure multer for handling file uploads
 const storage = multer.memoryStorage();
@@ -212,18 +213,26 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
             Email: ${email}<br>
             Phone: ${phone}</p>
             <p><strong>Reason:</strong><br>${reason}</p>
+            <p><em>Visitor's photo is attached to this email.</em></p>
             <div style="margin: 30px 0;">
-              <a href="${process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app'}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
+              <a href="${config.app.baseUrl}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                  style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                  ✅ Allow
               </a>
-              <a href="${process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app'}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
+              <a href="${config.app.baseUrl}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
                  style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                  ❌ Deny
               </a>
             </div>
           </div>
-        `
+        `,
+        attachments: [
+          {
+            filename: `visitor_${name.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`,
+            path: photoPath,
+            cid: 'visitor-photo'
+          }
+        ]
       };
 
       await transporter.sendMail(mailOptions);
@@ -262,7 +271,7 @@ router.post('/register/returning', validateReturningVisitor, async (req, res) =>
 
     // Verify visitor exists
     const [visitor] = await db.promise().query(
-      'SELECT name, email, phone FROM visitors WHERE id = ?',
+      'SELECT name, email, phone, photo_path FROM visitors WHERE id = ?',
       [visitor_id]
     );
 
@@ -275,6 +284,19 @@ router.post('/register/returning', validateReturningVisitor, async (req, res) =>
       'INSERT INTO visits(visitor_id, staff_email, reason) VALUES (?, ?, ?)',
       [visitor_id, staff_email, reason]
     );
+
+    // Prepare email attachments if photo exists
+    const attachments = [];
+    if (visitor[0].photo_path) {
+      const photoPath = path.join(__dirname, '..', 'public', visitor[0].photo_path);
+      if (fs.existsSync(photoPath)) {
+        attachments.push({
+          filename: `visitor_${visitor[0].name.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`,
+          path: photoPath,
+          cid: 'visitor-photo'
+        });
+      }
+    }
 
     // Send email
     const mailOptions = {
@@ -289,18 +311,20 @@ router.post('/register/returning', validateReturningVisitor, async (req, res) =>
           Email: ${visitor[0].email}<br>
           Phone: ${visitor[0].phone}</p>
           <p><strong>Reason:</strong><br>${reason}</p>
+          ${attachments.length > 0 ? '<p><em>Visitor\'s photo is attached to this email.</em></p>' : ''}
           <div style="margin: 30px 0;">
-            <a href="${process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app'}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
+            <a href="${config.app.baseUrl}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                ✅ Allow
             </a>
-            <a href="${process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app'}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
+            <a href="${config.app.baseUrl}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
                style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                ❌ Deny
             </a>
           </div>
         </div>
-      `
+      `,
+      attachments: attachments
     };
 
     await transporter.sendMail(mailOptions);

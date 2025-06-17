@@ -2,11 +2,11 @@ require('dotenv').config();
 
 module.exports = {
   db: {
-    host: process.env.DB_HOST || 'localhost',
+    host: process.env.DB_HOST || 'tramway.proxy.rlwy.net',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'visitor_app',
-    port: process.env.DB_PORT || 3306
+    password: process.env.DB_PASSWORD || 'qmXVvvEmWvavzTdcXiFdjqvILiVWWmMz',
+    database: process.env.DB_NAME || 'railway',
+    port: process.env.DB_PORT || 27380
   },
   server: {
     port: process.env.PORT || 3000
