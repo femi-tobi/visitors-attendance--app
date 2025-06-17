@@ -14,6 +14,7 @@ const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+console.log('BASE_URL used for email:', process.env.BASE_URL);
 
 // Configure multer for handling file uploads
 const storage = multer.memoryStorage();
