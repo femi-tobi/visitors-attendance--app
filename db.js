@@ -5,7 +5,7 @@ const db = mysql.createConnection({
   host: process.env.DB_HOST || 'tramway.proxy.rlwy.net',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || 'qmXVvvEmWvavzTdcXiFdjqvILiVWWmMz',
-  database: process.env.DB_NAME || 'visitor_app',
+  database: process.env.DB_NAME || 'railway',
   port: process.env.DB_PORT || 27380
 });
 
@@ -22,9 +22,9 @@ module.exports = db;
 const connection = mysql.createConnection({
   host: 'tramway.proxy.rlwy.net',
   user: 'root',
-  password: 'PGEaxsWNIsOYJJzdSCoAraQyYroBTKRe',
+  password: 'qmXVvvEmWvavzTdcXiFdjqvILiVWWmMz',
   database: 'railway',
-  port: 58336,
+  port: 27380,
 });
 
 connection.connect((err) => {
