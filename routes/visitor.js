@@ -212,11 +212,11 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
             Phone: ${phone}</p>
             <p><strong>Reason:</strong><br>${reason}</p>
             <div style="margin: 30px 0;">
-              <a href="${process.env.BASE_URL || 'http://localhost:3000'}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
+              <a href="${process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app'}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                  style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                  ✅ Allow
               </a>
-              <a href="${process.env.BASE_URL || 'http://localhost:3000'}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
+              <a href="${process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app'}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
                  style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                  ❌ Deny
               </a>
@@ -289,11 +289,11 @@ router.post('/register/returning', validateReturningVisitor, async (req, res) =>
           Phone: ${visitor[0].phone}</p>
           <p><strong>Reason:</strong><br>${reason}</p>
           <div style="margin: 30px 0;">
-            <a href="${process.env.BASE_URL || 'http://localhost:3000'}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
+            <a href="${process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app'}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                ✅ Allow
             </a>
-            <a href="${process.env.BASE_URL || 'http://localhost:3000'}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
+            <a href="${process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app'}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
                style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                ❌ Deny
             </a>

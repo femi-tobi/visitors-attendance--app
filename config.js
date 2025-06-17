@@ -16,7 +16,7 @@ module.exports = {
     pass: process.env.EMAIL_PASS
   },
   app: {
-    baseUrl: process.env.BASE_URL || 'http://localhost:3000',
+    baseUrl: process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app',
     sessionSecret: process.env.SESSION_SECRET || 'your-secret-key'
   }
 }; 
