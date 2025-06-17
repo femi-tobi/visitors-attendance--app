@@ -1,5 +1,14 @@
 require('dotenv').config();
 
+// Ensure BASE_URL has proper protocol
+const getBaseUrl = () => {
+  const baseUrl = process.env.BASE_URL || 'visitors-attendance-app-production.up.railway.app';
+  if (baseUrl.startsWith('http://') || baseUrl.startsWith('https://')) {
+    return baseUrl;
+  }
+  return `https://${baseUrl}`;
+};
+
 module.exports = {
   db: {
     host: process.env.DB_HOST || 'tramway.proxy.rlwy.net',
@@ -16,7 +25,7 @@ module.exports = {
     pass: process.env.EMAIL_PASS
   },
   app: {
-    baseUrl: process.env.BASE_URL || 'https://visitors-attendance-app-production.up.railway.app',
+    baseUrl: getBaseUrl(),
     sessionSecret: process.env.SESSION_SECRET || 'your-secret-key'
   }
 }; 
