@@ -174,15 +174,24 @@
           </div>
 
           <div>
-            <label for="returning_staff_email" class="block text-sm font-medium text-gray-700 mb-1">Staff Email</label>
-            <input 
-              id="returning_staff_email"
-              name="staff_email" 
-              type="email" 
-              required 
-              placeholder="staff@company.com"
-              class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+            <label for="returning_staff_name" class="block text-sm font-medium text-gray-700 mb-1">Staff Name</label>
+            <div class="relative">
+              <input 
+                id="returning_staff_name"
+                type="text" 
+                required 
+                placeholder="Enter staff name"
+                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+              <input 
+                id="returning_staff_email"
+                name="staff_email" 
+                type="hidden" 
+                required
+              >
+              <div id="returningStaffSearchResults" class="absolute z-10 w-full bg-white mt-1 rounded-md shadow-lg hidden">
+              </div>
+            </div>
           </div>
 
           <div>
@@ -399,6 +408,59 @@
     document.addEventListener('click', function(e) {
       if (!staffSearchResults.contains(e.target) && e.target !== staffNameInput) {
         staffSearchResults.classList.add('hidden');
+      }
+    });
+
+    // Returning visitor staff search functionality
+    const returningStaffNameInput = document.getElementById('returning_staff_name');
+    const returningStaffEmailInput = document.getElementById('returning_staff_email');
+    const returningStaffSearchResults = document.getElementById('returningStaffSearchResults');
+    let returningStaffDebounceTimer;
+
+    returningStaffNameInput.addEventListener('input', function() {
+      clearTimeout(returningStaffDebounceTimer);
+      const query = this.value.trim();
+      
+      if (query.length < 2) {
+        returningStaffSearchResults.innerHTML = '';
+        returningStaffSearchResults.classList.add('hidden');
+        returningStaffEmailInput.value = '';
+        return;
+      }
+
+      returningStaffDebounceTimer = setTimeout(async () => {
+        try {
+          const response = await fetch(`/search-staff?query=${encodeURIComponent(query)}`);
+          const data = await response.json();
+          
+          if (data.length > 0) {
+            returningStaffSearchResults.innerHTML = data.map(staff => `
+              <div class="p-3 hover:bg-gray-100 cursor-pointer" onclick='selectReturningStaff(${JSON.stringify(staff).replace(/"/g, '&quot;')})'>
+                <div class="font-medium">${staff.name}</div>
+                <div class="text-sm text-gray-600">${staff.email}</div>
+              </div>
+            `).join('');
+            returningStaffSearchResults.classList.remove('hidden');
+          } else {
+            returningStaffSearchResults.innerHTML = '<div class="p-3 text-gray-500">No matching staff found</div>';
+            returningStaffSearchResults.classList.remove('hidden');
+          }
+        } catch (error) {
+          console.error('Returning staff search failed:', error);
+        }
+      }, 300);
+    });
+
+    function selectReturningStaff(staff) {
+      returningStaffNameInput.value = staff.name;
+      returningStaffEmailInput.value = staff.email;
+      returningStaffSearchResults.classList.add('hidden');
+    }
+
+    // Close returning staff search results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!returningStaffSearchResults.contains(e.target) && e.target !== returningStaffNameInput) {
+        returningStaffSearchResults.classList.add('hidden');
       }
     });
   </script>

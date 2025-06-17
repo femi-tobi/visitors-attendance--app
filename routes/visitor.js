@@ -344,6 +344,11 @@ router.get('/respond', async (req, res) => {
       return res.status(400).send("Invalid response link.");
     }
 
+    console.log('Response handler called with:', { email, status });
+    console.log('Current baseUrl:', config.app.baseUrl);
+    console.log('Request headers:', req.headers.host);
+    console.log('Request protocol:', req.protocol);
+
     // Update visit status
     await db.promise().query(
       'UPDATE visits SET status = ? WHERE staff_email = ? ORDER BY id DESC LIMIT 1',
@@ -409,7 +414,7 @@ router.get('/respond', async (req, res) => {
       }
     }
 
-    res.render('response', { status });
+    res.render('response', { status, config });
   } catch (error) {
     console.error('Response error:', error);
     res.status(500).send("An error occurred while processing your response.");
