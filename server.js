@@ -8,6 +8,7 @@ const session = require('express-session');
 
 const app = express();
 
+app.set('trust proxy', 1);
 // Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
