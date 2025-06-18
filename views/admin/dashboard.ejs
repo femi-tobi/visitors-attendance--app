@@ -127,12 +127,15 @@
 
     <!-- Recent Visits Table -->
     <div class="bg-white shadow overflow-hidden sm:rounded-md">
-      <div class="px-4 py-5 sm:px-6">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Visit Requests</h3>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">Latest visitor requests and their status</p>
+      <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+        <div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Visit Requests</h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">Latest visitor requests and their status</p>
+        </div>
+        <button id="exportExcelBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">Export to Excel</button>
       </div>
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+        <table id="visitsTable" class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visitor</th>
@@ -193,4 +196,12 @@
     </div>
   </div>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+  document.getElementById('exportExcelBtn').addEventListener('click', function () {
+    var table = document.getElementById('visitsTable');
+    var wb = XLSX.utils.table_to_book(table, {sheet: "Visits"});
+    XLSX.writeFile(wb, 'visits.xlsx');
+  });
+</script>
 </html> 
