@@ -127,12 +127,19 @@
 
     <!-- Recent Visits Table -->
     <div class="bg-white shadow overflow-hidden sm:rounded-md">
-      <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+      <div class="px-4 py-5 sm:px-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Visit Requests</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">Latest visitor requests and their status</p>
         </div>
-        <button id="exportExcelBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">Export to Excel</button>
+        <div class="flex flex-col md:flex-row gap-2 items-center">
+          <input type="date" id="startDate" class="border rounded px-2 py-1" />
+          <span class="mx-1">to</span>
+          <input type="date" id="endDate" class="border rounded px-2 py-1" />
+          <button id="filterDateBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Filter</button>
+          <button id="clearFilterBtn" class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">Clear</button>
+          <button id="exportExcelBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">Export to Excel</button>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table id="visitsTable" class="min-w-full divide-y divide-gray-200">
@@ -202,6 +209,43 @@
     var table = document.getElementById('visitsTable');
     var wb = XLSX.utils.table_to_book(table, {sheet: "Visits"});
     XLSX.writeFile(wb, 'visits.xlsx');
+  });
+
+  // Date filter logic
+  document.getElementById('filterDateBtn').addEventListener('click', function () {
+    var start = document.getElementById('startDate').value;
+    var end = document.getElementById('endDate').value;
+    var rows = document.querySelectorAll('#visitsTable tbody tr');
+    rows.forEach(function(row) {
+      var dateCell = row.querySelector('td:nth-child(5)');
+      if (!dateCell) return;
+      var dateText = dateCell.childNodes[0].textContent.trim();
+      if (!dateText || dateText === 'Unknown') {
+        row.style.display = '';
+        return;
+      }
+      var rowDate = new Date(dateText);
+      var show = true;
+      if (start) {
+        var startDate = new Date(start);
+        if (rowDate < startDate) show = false;
+      }
+      if (end) {
+        var endDate = new Date(end);
+        // Add 1 day to endDate to make it inclusive
+        endDate.setDate(endDate.getDate() + 1);
+        if (rowDate >= endDate) show = false;
+      }
+      row.style.display = show ? '' : 'none';
+    });
+  });
+  document.getElementById('clearFilterBtn').addEventListener('click', function () {
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    var rows = document.querySelectorAll('#visitsTable tbody tr');
+    rows.forEach(function(row) {
+      row.style.display = '';
+    });
   });
 </script>
 </html> 
