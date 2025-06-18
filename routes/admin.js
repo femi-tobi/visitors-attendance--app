@@ -3,6 +3,18 @@ const router = express.Router();
 const db = require('../db');
 const { body, validationResult } = require('express-validator');
 
+// Debug middleware to log all admin requests
+router.use((req, res, next) => {
+  console.log('=== ADMIN ROUTE ACCESSED ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Path:', req.path);
+  console.log('Original URL:', req.originalUrl);
+  console.log('Body:', req.body);
+  console.log('===========================');
+  next();
+});
+
 // Middleware to check if user is admin
 const isAdmin = (req, res, next) => {
   if (!req.session || !req.session.isAdmin) {
@@ -197,6 +209,20 @@ router.get('/test-env', (req, res) => {
   `);
 });
 
+// Test POST route (for debugging only - remove in production)
+router.post('/test-post', (req, res) => {
+  console.log('Test POST route accessed');
+  console.log('Request body:', req.body);
+  console.log('Request method:', req.method);
+  
+  res.send(`
+    <h1>POST Test Successful</h1>
+    <p>POST requests are working!</p>
+    <p>Request body: ${JSON.stringify(req.body)}</p>
+    <a href="/admin/login">Back to Login</a>
+  `);
+});
+
 // Test login route (for debugging only - remove in production)
 router.get('/test-login', (req, res) => {
   console.log('Test login route accessed');
@@ -217,12 +243,7 @@ router.get('/test-login', (req, res) => {
   res.redirect('/admin');
 });
 
-// Admin login page
-router.get('/login', (req, res) => {
-  res.render('admin/login');
-});
-
-// Admin login handler
+// Admin login handler - POST route (must come before GET /login)
 router.post('/login', async (req, res) => {
   try {
     console.log('=== ADMIN LOGIN ATTEMPT ===');
@@ -306,6 +327,11 @@ router.post('/login', async (req, res) => {
       <a href="/admin/login">Back to Login</a>
     `);
   }
+});
+
+// Admin login page - GET route
+router.get('/login', (req, res) => {
+  res.render('admin/login');
 });
 
 // Admin logout
