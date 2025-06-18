@@ -200,21 +200,27 @@ router.get('/login', (req, res) => {
 });
 
 // Admin login handler
-router.post('/login', [
-  body('username').trim().notEmpty(),
-  body('password').trim().notEmpty()
-], async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
-    console.log('Admin login attempt received');
+    console.log('=== ADMIN LOGIN ATTEMPT ===');
     console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
+    console.log('Content-Type:', req.headers['content-type']);
     console.log('Environment variables:');
     console.log('ADMIN_USERNAME:', process.env.ADMIN_USERNAME);
     console.log('ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? '***SET***' : 'NOT SET');
     
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
-      return res.render('admin/login', { errors: errors.array() });
+    // Check if we have the required fields
+    if (!req.body.username || !req.body.password) {
+      console.log('❌ Missing username or password in request body');
+      console.log('Username provided:', !!req.body.username);
+      console.log('Password provided:', !!req.body.password);
+      return res.status(400).send(`
+        <h1>Login Error</h1>
+        <p>Missing username or password</p>
+        <p>Request body: ${JSON.stringify(req.body)}</p>
+        <a href="/admin/login">Back to Login</a>
+      `);
     }
 
     const { username, password } = req.body;
@@ -223,28 +229,42 @@ router.post('/login', [
     
     // Check if environment variables are set
     if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
-      console.log('ERROR: Admin credentials not set in environment variables');
-      return res.render('admin/login', { 
-        error: 'Admin credentials not configured. Please contact administrator.' 
-      });
+      console.log('❌ ERROR: Admin credentials not set in environment variables');
+      return res.status(500).send(`
+        <h1>Configuration Error</h1>
+        <p>Admin credentials not configured. Please contact administrator.</p>
+        <p>ADMIN_USERNAME: ${process.env.ADMIN_USERNAME ? 'SET' : 'NOT SET'}</p>
+        <p>ADMIN_PASSWORD: ${process.env.ADMIN_PASSWORD ? 'SET' : 'NOT SET'}</p>
+        <a href="/admin/login">Back to Login</a>
+      `);
     }
     
-    // In a real application, you should use proper authentication
-    // This is just a simple example
+    // Check credentials
     if (username === process.env.ADMIN_USERNAME && 
         password === process.env.ADMIN_PASSWORD) {
-      console.log('Login successful for user:', username);
+      console.log('✅ Login successful for user:', username);
       req.session.isAdmin = true;
-      res.redirect('/admin');
+      return res.redirect('/admin');
     } else {
-      console.log('Login failed - credentials mismatch');
+      console.log('❌ Login failed - credentials mismatch');
       console.log('Expected username:', process.env.ADMIN_USERNAME);
       console.log('Expected password:', process.env.ADMIN_PASSWORD ? '***SET***' : 'NOT SET');
-      res.render('admin/login', { error: 'Invalid credentials' });
+      return res.status(401).send(`
+        <h1>Login Failed</h1>
+        <p>Invalid credentials</p>
+        <p>Username provided: ${username}</p>
+        <p>Expected username: ${process.env.ADMIN_USERNAME}</p>
+        <a href="/admin/login">Back to Login</a>
+      `);
     }
   } catch (error) {
-    console.error('Error in admin login:', error);
-    res.render('admin/login', { error: 'Login error occurred' });
+    console.error('❌ Error in admin login:', error);
+    console.error('Error stack:', error.stack);
+    return res.status(500).send(`
+      <h1>Server Error</h1>
+      <p>Login error occurred: ${error.message}</p>
+      <a href="/admin/login">Back to Login</a>
+    `);
   }
 });
 

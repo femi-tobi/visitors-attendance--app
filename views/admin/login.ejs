@@ -112,13 +112,24 @@
         button.textContent = 'Signing in...';
         button.disabled = true;
         
-        // Get form data
-        const formData = new FormData(this);
+        // Get form data properly
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        // Create URL-encoded data
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+        
+        console.log('Sending form data:', formData.toString());
         
         // Submit via AJAX
         fetch('/admin/login', {
           method: 'POST',
-          body: formData
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formData.toString()
         })
         .then(response => {
           console.log('Response status:', response.status);
@@ -130,23 +141,47 @@
           console.log('Response data preview:', data.substring(0, 500));
           
           // Check if response contains error or success indicators
-          if (data.includes('Invalid credentials') || data.includes('error')) {
+          if (data.includes('Invalid credentials') || data.includes('error') || data.includes('Invalid value')) {
             console.log('❌ Login failed - showing error page');
-            // Replace the page content with the error response
-            document.body.innerHTML = data;
+            // Show error in a more controlled way
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4';
+            errorDiv.innerHTML = `
+              <strong>Login Failed!</strong><br>
+              <small>Response: ${data.substring(0, 200)}...</small>
+            `;
+            document.getElementById('loginForm').appendChild(errorDiv);
+            button.textContent = 'Sign in';
+            button.disabled = false;
           } else if (data.includes('Admin Dashboard') || data.includes('admin')) {
             console.log('✅ Login successful - redirecting to dashboard');
             window.location.href = '/admin';
           } else {
-            console.log('❓ Unexpected response - showing full response');
-            document.body.innerHTML = data;
+            console.log('❓ Unexpected response - showing response info');
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mt-4';
+            infoDiv.innerHTML = `
+              <strong>Server Response:</strong><br>
+              <small>Length: ${data.length} characters</small><br>
+              <small>Preview: ${data.substring(0, 200)}...</small>
+            `;
+            document.getElementById('loginForm').appendChild(infoDiv);
+            button.textContent = 'Sign in';
+            button.disabled = false;
           }
         })
         .catch(error => {
           console.error('❌ Fetch error:', error);
           button.textContent = 'Sign in';
           button.disabled = false;
-          alert('Login error: ' + error.message);
+          
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4';
+          errorDiv.innerHTML = `
+            <strong>Network Error:</strong><br>
+            <small>${error.message}</small>
+          `;
+          document.getElementById('loginForm').appendChild(errorDiv);
         });
       });
       
