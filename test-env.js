@@ -1,30 +1,33 @@
 require('dotenv').config();
 
-console.log('=== Environment Variables Test ===');
+console.log('=== ENVIRONMENT VARIABLES TEST ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('ADMIN_USERNAME:', process.env.ADMIN_USERNAME);
-console.log('ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? '***SET***' : 'NOT SET');
-console.log('EMAIL_USER:', process.env.EMAIL_USER);
-console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '***SET***' : 'NOT SET');
-console.log('BASE_URL:', process.env.BASE_URL);
-console.log('===============================');
+console.log('PORT:', process.env.PORT);
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+console.log('SESSION_SECRET:', process.env.SESSION_SECRET ? 'SET' : 'NOT SET');
+console.log('BASE_URL:', process.env.BASE_URL || 'NOT SET');
 
-// Test admin authentication logic
+console.log('\n=== ADMIN CREDENTIALS TEST ===');
+console.log('ADMIN_USERNAME:', process.env.ADMIN_USERNAME || 'NOT SET');
+console.log('ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? 'SET (length: ' + process.env.ADMIN_PASSWORD.length + ')' : 'NOT SET');
+
+console.log('\n=== LOGIN TEST ===');
 const testUsername = 'admin';
 const testPassword = 'admin123';
 
-console.log('\n=== Admin Authentication Test ===');
-console.log('Test username:', testUsername);
-console.log('Test password:', testPassword);
-console.log('Expected username:', process.env.ADMIN_USERNAME);
-console.log('Expected password set:', process.env.ADMIN_PASSWORD ? 'YES' : 'NO');
+console.log('Testing with:');
+console.log('Username:', testUsername);
+console.log('Password:', testPassword);
 
-if (testUsername === process.env.ADMIN_USERNAME && 
-    testPassword === process.env.ADMIN_PASSWORD) {
-  console.log('✅ Authentication would succeed');
+console.log('\nExpected vs Actual:');
+console.log('Username match:', testUsername === process.env.ADMIN_USERNAME);
+console.log('Password match:', testPassword === process.env.ADMIN_PASSWORD);
+
+if (testUsername === process.env.ADMIN_USERNAME && testPassword === process.env.ADMIN_PASSWORD) {
+  console.log('\n✅ LOGIN SHOULD WORK!');
 } else {
-  console.log('❌ Authentication would fail');
-  console.log('Username match:', testUsername === process.env.ADMIN_USERNAME);
-  console.log('Password match:', testPassword === process.env.ADMIN_PASSWORD);
-}
-console.log('================================'); 
+  console.log('\n❌ LOGIN WILL FAIL!');
+  console.log('Please set these environment variables in Railway:');
+  console.log('ADMIN_USERNAME=admin');
+  console.log('ADMIN_PASSWORD=admin123');
+} 

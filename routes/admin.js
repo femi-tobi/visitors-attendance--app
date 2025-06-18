@@ -174,6 +174,29 @@ router.get('/simple', isAdmin, async (req, res) => {
   }
 });
 
+// Test environment variables route (for debugging only - remove in production)
+router.get('/test-env', (req, res) => {
+  console.log('Environment test route accessed');
+  
+  const envTest = {
+    ADMIN_USERNAME: process.env.ADMIN_USERNAME || 'NOT SET',
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD ? 'SET (length: ' + process.env.ADMIN_PASSWORD.length + ')' : 'NOT SET',
+    testUsername: 'admin',
+    testPassword: 'admin123',
+    usernameMatch: 'admin' === process.env.ADMIN_USERNAME,
+    passwordMatch: 'admin123' === process.env.ADMIN_PASSWORD
+  };
+  
+  console.log('Environment test results:', envTest);
+  
+  res.send(`
+    <h1>Environment Variables Test</h1>
+    <pre>${JSON.stringify(envTest, null, 2)}</pre>
+    <br>
+    <a href="/admin/login">Back to Login</a>
+  `);
+});
+
 // Test login route (for debugging only - remove in production)
 router.get('/test-login', (req, res) => {
   console.log('Test login route accessed');
