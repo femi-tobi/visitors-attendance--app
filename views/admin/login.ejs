@@ -16,6 +16,16 @@
       </p>
     </div>
 
+    <!-- Debug Log Display -->
+    <div id="debugLogs" class="bg-gray-800 text-green-400 p-4 rounded text-xs font-mono max-h-40 overflow-y-auto" style="display: none;">
+      <div class="font-bold mb-2">Debug Logs:</div>
+      <div id="logContent"></div>
+    </div>
+
+    <button onclick="toggleLogs()" class="text-xs text-gray-500 hover:text-gray-700">
+      Toggle Debug Logs
+    </button>
+
     <% if (locals.error) { %>
       <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
         <span class="block sm:inline"><%= error %></span>
@@ -55,7 +65,44 @@
     </form>
 
     <script>
+      // Log capture system
+      const logContent = document.getElementById('logContent');
+      const originalLog = console.log;
+      const originalError = console.error;
+      
+      function addLog(message, type = 'log') {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.className = type === 'error' ? 'text-red-400' : 'text-green-400';
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        logContent.appendChild(logEntry);
+        logContent.scrollTop = logContent.scrollHeight;
+        
+        // Also log to console
+        if (type === 'error') {
+          originalError.call(console, message);
+        } else {
+          originalLog.call(console, message);
+        }
+      }
+      
+      function toggleLogs() {
+        const logsDiv = document.getElementById('debugLogs');
+        logsDiv.style.display = logsDiv.style.display === 'none' ? 'block' : 'none';
+      }
+      
+      // Override console methods to capture logs
+      console.log = function(...args) {
+        addLog(args.join(' '));
+      };
+      
+      console.error = function(...args) {
+        addLog(args.join(' '), 'error');
+      };
+
       document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent normal form submission
+        
         console.log('Login form submitted');
         console.log('Username:', document.getElementById('username').value);
         console.log('Password provided:', document.getElementById('password').value ? 'YES' : 'NO');
@@ -65,13 +112,51 @@
         button.textContent = 'Signing in...';
         button.disabled = true;
         
-        // Let the form submit normally
+        // Get form data
+        const formData = new FormData(this);
+        
+        // Submit via AJAX
+        fetch('/admin/login', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          console.log('Response status:', response.status);
+          console.log('Response headers:', response.headers);
+          return response.text();
+        })
+        .then(data => {
+          console.log('Response data length:', data.length);
+          console.log('Response data preview:', data.substring(0, 500));
+          
+          // Check if response contains error or success indicators
+          if (data.includes('Invalid credentials') || data.includes('error')) {
+            console.log('❌ Login failed - showing error page');
+            // Replace the page content with the error response
+            document.body.innerHTML = data;
+          } else if (data.includes('Admin Dashboard') || data.includes('admin')) {
+            console.log('✅ Login successful - redirecting to dashboard');
+            window.location.href = '/admin';
+          } else {
+            console.log('❓ Unexpected response - showing full response');
+            document.body.innerHTML = data;
+          }
+        })
+        .catch(error => {
+          console.error('❌ Fetch error:', error);
+          button.textContent = 'Sign in';
+          button.disabled = false;
+          alert('Login error: ' + error.message);
+        });
       });
       
       // Also log when button is clicked
       document.getElementById('loginButton').addEventListener('click', function(e) {
         console.log('Login button clicked');
       });
+      
+      // Keep console logs visible
+      console.log('Login page loaded - logs will be preserved');
     </script>
   </div>
 </body>
