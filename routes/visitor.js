@@ -69,9 +69,23 @@ const validateNewVisitor = [
 
 // Validation middleware for returning visitors
 const validateReturningVisitor = [
-  body('visitor_id').isNumeric(),
-  body('reason').trim().isLength({ min: 5 }),
-  body('staff_email').isEmail().normalizeEmail()
+  body('visitor_id')
+    .notEmpty()
+    .withMessage('Visitor ID is required')
+    .isInt({ min: 1 })
+    .withMessage('Visitor ID must be a valid number'),
+  body('reason')
+    .trim()
+    .notEmpty()
+    .withMessage('Reason for visit is required')
+    .isLength({ min: 5 })
+    .withMessage('Reason must be at least 5 characters long'),
+  body('staff_email')
+    .notEmpty()
+    .withMessage('Staff email is required')
+    .isEmail()
+    .withMessage('Please enter a valid staff email address')
+    .normalizeEmail()
 ];
 
 // Serve the form
@@ -260,9 +274,12 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
 });
 
 // Register a returning visitor
-router.post('/register/returning', validateReturningVisitor, async (req, res) => {
+router.post('/register/returning', upload.none(), validateReturningVisitor, async (req, res) => {
   try {
     console.log('Returning visitor registration data received:', req.body);
+    console.log('visitor_id:', req.body.visitor_id, 'type:', typeof req.body.visitor_id);
+    console.log('reason:', req.body.reason, 'length:', req.body.reason ? req.body.reason.length : 0);
+    console.log('staff_email:', req.body.staff_email);
     
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

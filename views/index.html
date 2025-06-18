@@ -292,10 +292,16 @@
     });
 
     function fillVisitorData(visitor) {
+      console.log('Filling visitor data:', visitor);
+      console.log('Visitor ID:', visitor.id);
+      
       document.getElementById('visitor_id').value = visitor.id;
       document.getElementById('visitor_name').textContent = visitor.name;
       document.getElementById('visitor_email').textContent = visitor.email;
       document.getElementById('visitor_phone').textContent = visitor.phone;
+      
+      // Verify the visitor_id was set
+      console.log('visitor_id field value after setting:', document.getElementById('visitor_id').value);
       
       newVisitorForm.classList.add('hidden');
       returningVisitorForm.classList.remove('hidden');
@@ -345,6 +351,14 @@
 
         try {
           console.log('Form data being sent:', Object.fromEntries(formData));
+          console.log('Form action:', this.action);
+          console.log('Form method:', this.method);
+          
+          // Log individual form fields for debugging
+          console.log('visitor_id:', formData.get('visitor_id'));
+          console.log('reason:', formData.get('reason'));
+          console.log('staff_email:', formData.get('staff_email'));
+          
           const response = await fetch(this.action, {
             method: 'POST',
             body: formData  // Send formData directly without URLSearchParams
@@ -355,7 +369,32 @@
           
           if (result.success) {
             alert('Registration successful! The staff member will be notified.');
-            form.reset();
+            
+            // Clear form fields manually instead of using form.reset()
+            if (this.id === 'newVisitorForm') {
+              this.reset();
+              if (webcamCapture) {
+                webcamCapture.retakePhoto();
+              }
+            } else {
+              // For returning visitor form, clear specific fields
+              document.getElementById('visitor_id').value = '';
+              document.getElementById('returning_staff_name').value = '';
+              document.getElementById('returning_staff_email').value = '';
+              document.getElementById('returning_reason').value = '';
+              document.getElementById('visitor_name').textContent = '';
+              document.getElementById('visitor_email').textContent = '';
+              document.getElementById('visitor_phone').textContent = '';
+              
+              // Remove visual feedback
+              const successIndicator = document.querySelector('.success-indicator');
+              if (successIndicator) {
+                successIndicator.remove();
+              }
+              returningStaffNameInput.style.backgroundColor = '';
+              returningStaffNameInput.style.borderColor = '';
+            }
+            
             location.reload();
           } else {
             let errorMessage = 'Registration failed. ';
@@ -488,9 +527,15 @@
     });
 
     function selectReturningStaff(staff) {
+      console.log('Selecting returning staff:', staff);
+      console.log('Staff email:', staff.email);
+      
       returningStaffNameInput.value = staff.name;
       returningStaffEmailInput.value = staff.email;
       returningStaffSearchResults.classList.add('hidden');
+      
+      // Verify the staff email was set
+      console.log('returning_staff_email field value after setting:', document.getElementById('returning_staff_email').value);
       
       // Add visual feedback
       returningStaffNameInput.style.backgroundColor = '#f0f9ff';
