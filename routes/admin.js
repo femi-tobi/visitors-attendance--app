@@ -174,6 +174,26 @@ router.get('/simple', isAdmin, async (req, res) => {
   }
 });
 
+// Test login route (for debugging only - remove in production)
+router.get('/test-login', (req, res) => {
+  console.log('Test login route accessed');
+  console.log('Environment variables:');
+  console.log('ADMIN_USERNAME:', process.env.ADMIN_USERNAME);
+  console.log('ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? '***SET***' : 'NOT SET');
+  
+  if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+    return res.send(`
+      <h1>Admin Login Test</h1>
+      <p>❌ Admin credentials not configured</p>
+      <p>Please set ADMIN_USERNAME and ADMIN_PASSWORD in Railway environment variables</p>
+    `);
+  }
+  
+  // Auto-login for testing
+  req.session.isAdmin = true;
+  res.redirect('/admin');
+});
+
 // Admin login page
 router.get('/login', (req, res) => {
   res.render('admin/login');
@@ -184,21 +204,47 @@ router.post('/login', [
   body('username').trim().notEmpty(),
   body('password').trim().notEmpty()
 ], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.render('admin/login', { errors: errors.array() });
-  }
+  try {
+    console.log('Admin login attempt received');
+    console.log('Request body:', req.body);
+    console.log('Environment variables:');
+    console.log('ADMIN_USERNAME:', process.env.ADMIN_USERNAME);
+    console.log('ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? '***SET***' : 'NOT SET');
+    
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
+      return res.render('admin/login', { errors: errors.array() });
+    }
 
-  const { username, password } = req.body;
-  
-  // In a real application, you should use proper authentication
-  // This is just a simple example
-  if (username === process.env.ADMIN_USERNAME && 
-      password === process.env.ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
-    res.redirect('/admin');
-  } else {
-    res.render('admin/login', { error: 'Invalid credentials' });
+    const { username, password } = req.body;
+    console.log('Login attempt - Username:', username);
+    console.log('Login attempt - Password provided:', password ? 'YES' : 'NO');
+    
+    // Check if environment variables are set
+    if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+      console.log('ERROR: Admin credentials not set in environment variables');
+      return res.render('admin/login', { 
+        error: 'Admin credentials not configured. Please contact administrator.' 
+      });
+    }
+    
+    // In a real application, you should use proper authentication
+    // This is just a simple example
+    if (username === process.env.ADMIN_USERNAME && 
+        password === process.env.ADMIN_PASSWORD) {
+      console.log('Login successful for user:', username);
+      req.session.isAdmin = true;
+      res.redirect('/admin');
+    } else {
+      console.log('Login failed - credentials mismatch');
+      console.log('Expected username:', process.env.ADMIN_USERNAME);
+      console.log('Expected password:', process.env.ADMIN_PASSWORD ? '***SET***' : 'NOT SET');
+      res.render('admin/login', { error: 'Invalid credentials' });
+    }
+  } catch (error) {
+    console.error('Error in admin login:', error);
+    res.render('admin/login', { error: 'Login error occurred' });
   }
 });
 
