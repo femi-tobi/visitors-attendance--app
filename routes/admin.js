@@ -229,6 +229,8 @@ router.post('/login', async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Request headers:', req.headers);
     console.log('Content-Type:', req.headers['content-type']);
+    console.log('Session ID:', req.sessionID);
+    console.log('Current session:', req.session);
     console.log('Environment variables:');
     console.log('ADMIN_USERNAME:', process.env.ADMIN_USERNAME);
     console.log('ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? '***SET***' : 'NOT SET');
@@ -249,6 +251,7 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     console.log('Login attempt - Username:', username);
     console.log('Login attempt - Password provided:', password ? 'YES' : 'NO');
+    console.log('Login attempt - Password length:', password ? password.length : 0);
     
     // Check if environment variables are set
     if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
@@ -262,11 +265,23 @@ router.post('/login', async (req, res) => {
       `);
     }
     
+    // Detailed credential comparison
+    console.log('=== CREDENTIAL COMPARISON ===');
+    console.log('Provided username:', username);
+    console.log('Expected username:', process.env.ADMIN_USERNAME);
+    console.log('Username match:', username === process.env.ADMIN_USERNAME);
+    console.log('Provided password length:', password.length);
+    console.log('Expected password length:', process.env.ADMIN_PASSWORD.length);
+    console.log('Password match:', password === process.env.ADMIN_PASSWORD);
+    
     // Check credentials
     if (username === process.env.ADMIN_USERNAME && 
         password === process.env.ADMIN_PASSWORD) {
       console.log('✅ Login successful for user:', username);
+      console.log('Setting session.isAdmin = true');
       req.session.isAdmin = true;
+      console.log('Session after setting:', req.session);
+      console.log('Redirecting to /admin');
       return res.redirect('/admin');
     } else {
       console.log('❌ Login failed - credentials mismatch');
@@ -277,6 +292,8 @@ router.post('/login', async (req, res) => {
         <p>Invalid credentials</p>
         <p>Username provided: ${username}</p>
         <p>Expected username: ${process.env.ADMIN_USERNAME}</p>
+        <p>Password length provided: ${password.length}</p>
+        <p>Expected password length: ${process.env.ADMIN_PASSWORD.length}</p>
         <a href="/admin/login">Back to Login</a>
       `);
     }
