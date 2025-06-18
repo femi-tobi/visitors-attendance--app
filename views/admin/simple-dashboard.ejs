@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Admin Dashboard</title>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+  
+  <h2>Statistics</h2>
+  <p>Total Visits: <%= stats ? stats.total_visits : 0 %></p>
+  <p>Approved: <%= stats ? stats.approved_visits : 0 %></p>
+  <p>Denied: <%= stats ? stats.denied_visits : 0 %></p>
+  <p>Pending: <%= stats ? stats.pending_visits : 0 %></p>
+  <p>Today: <%= todayVisits || 0 %></p>
+  
+  <h2>Recent Visits</h2>
+  <% if (visits && visits.length > 0) { %>
+    <ul>
+      <% visits.forEach(function(visit) { %>
+        <li>
+          <%= visit.visitor_name || 'Unknown' %> - 
+          <%= visit.staff_email || 'No staff' %> - 
+          <%= visit.status || 'No status' %>
+        </li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p>No visits found</p>
+  <% } %>
+  
+  <p><a href="/admin/staff">Staff Management</a></p>
+  <p><a href="/admin/logout">Logout</a></p>
+</body>
+</html> 

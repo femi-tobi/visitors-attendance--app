@@ -11,6 +11,169 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
+// Admin dashboard - main admin page
+router.get('/', isAdmin, async (req, res) => {
+  try {
+    console.log('Loading admin dashboard...');
+    
+    // Test database connection first
+    const [testResult] = await db.promise().query('SELECT 1 as test');
+    console.log('Database connection test:', testResult);
+    
+    // Check if tables exist
+    const [tables] = await db.promise().query('SHOW TABLES');
+    console.log('Available tables:', tables);
+    
+    // Get recent visits with visitor details
+    const [visits] = await db.promise().query(`
+      SELECT 
+        v.name as visitor_name,
+        v.email as visitor_email,
+        v.phone as visitor_phone,
+        vs.staff_email,
+        vs.reason,
+        vs.status,
+        vs.visit_time as created_at,
+        vs.id as visit_id
+      FROM visits vs 
+      JOIN visitors v ON vs.visitor_id = v.id 
+      ORDER BY vs.visit_time DESC
+      LIMIT 50
+    `);
+
+    console.log('Visits loaded:', visits.length);
+
+    // Get statistics
+    const [stats] = await db.promise().query(`
+      SELECT 
+        COUNT(*) as total_visits,
+        SUM(CASE WHEN status = 'allowed' THEN 1 ELSE 0 END) as approved_visits,
+        SUM(CASE WHEN status = 'denied' THEN 1 ELSE 0 END) as denied_visits,
+        SUM(CASE WHEN status IS NULL OR status = 'pending' THEN 1 ELSE 0 END) as pending_visits
+      FROM visits
+    `);
+
+    console.log('Stats loaded:', stats[0]);
+
+    // Get today's visits
+    const [todayVisits] = await db.promise().query(`
+      SELECT COUNT(*) as today_count
+      FROM visits 
+      WHERE DATE(visit_time) = CURDATE()
+    `);
+
+    console.log('Today visits:', todayVisits[0].today_count);
+
+    const dashboardData = {
+      visits: visits || [], 
+      stats: stats[0] || { total_visits: 0, approved_visits: 0, denied_visits: 0, pending_visits: 0 }, 
+      todayVisits: todayVisits[0] ? todayVisits[0].today_count : 0 
+    };
+
+    console.log('Rendering dashboard with data:', dashboardData);
+
+    res.render('admin/dashboard', dashboardData);
+  } catch (error) {
+    console.error('Error loading admin dashboard:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).render('error', { 
+      message: 'Failed to load dashboard',
+      error: error.message 
+    });
+  }
+});
+
+// Simple test route for admin dashboard
+router.get('/test', isAdmin, (req, res) => {
+  try {
+    console.log('Testing simple admin dashboard...');
+    const testData = {
+      visits: [
+        {
+          visitor_name: 'Test Visitor',
+          visitor_email: 'test@example.com',
+          visitor_phone: '1234567890',
+          staff_email: 'staff@example.com',
+          reason: 'Test visit',
+          status: 'pending',
+          created_at: new Date(),
+          visit_id: 1
+        }
+      ],
+      stats: {
+        total_visits: 1,
+        approved_visits: 0,
+        denied_visits: 0,
+        pending_visits: 1
+      },
+      todayVisits: 1
+    };
+    
+    console.log('Rendering test dashboard with data:', testData);
+    res.render('admin/dashboard', testData);
+  } catch (error) {
+    console.error('Error in test dashboard:', error);
+    res.status(500).render('error', { 
+      message: 'Test dashboard failed',
+      error: error.message 
+    });
+  }
+});
+
+// Simple dashboard test route
+router.get('/simple', isAdmin, async (req, res) => {
+  try {
+    console.log('Testing simple dashboard template...');
+    
+    // Get real data but use simple template
+    const [visits] = await db.promise().query(`
+      SELECT 
+        v.name as visitor_name,
+        v.email as visitor_email,
+        v.phone as visitor_phone,
+        vs.staff_email,
+        vs.reason,
+        vs.status,
+        vs.visit_time as created_at,
+        vs.id as visit_id
+      FROM visits vs 
+      JOIN visitors v ON vs.visitor_id = v.id 
+      ORDER BY vs.visit_time DESC
+      LIMIT 10
+    `);
+
+    const [stats] = await db.promise().query(`
+      SELECT 
+        COUNT(*) as total_visits,
+        SUM(CASE WHEN status = 'allowed' THEN 1 ELSE 0 END) as approved_visits,
+        SUM(CASE WHEN status = 'denied' THEN 1 ELSE 0 END) as denied_visits,
+        SUM(CASE WHEN status IS NULL OR status = 'pending' THEN 1 ELSE 0 END) as pending_visits
+      FROM visits
+    `);
+
+    const [todayVisits] = await db.promise().query(`
+      SELECT COUNT(*) as today_count
+      FROM visits 
+      WHERE DATE(visit_time) = CURDATE()
+    `);
+
+    const dashboardData = {
+      visits: visits || [], 
+      stats: stats[0] || { total_visits: 0, approved_visits: 0, denied_visits: 0, pending_visits: 0 }, 
+      todayVisits: todayVisits[0] ? todayVisits[0].today_count : 0 
+    };
+
+    console.log('Rendering simple dashboard with data:', dashboardData);
+    res.render('admin/simple-dashboard', dashboardData);
+  } catch (error) {
+    console.error('Error in simple dashboard:', error);
+    res.status(500).render('error', { 
+      message: 'Simple dashboard failed',
+      error: error.message 
+    });
+  }
+});
+
 // Admin login page
 router.get('/login', (req, res) => {
   res.render('admin/login');
@@ -33,7 +196,7 @@ router.post('/login', [
   if (username === process.env.ADMIN_USERNAME && 
       password === process.env.ADMIN_PASSWORD) {
     req.session.isAdmin = true;
-    res.redirect('/admin/staff');
+    res.redirect('/admin');
   } else {
     res.render('admin/login', { error: 'Invalid credentials' });
   }
