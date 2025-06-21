@@ -42,23 +42,23 @@ router.get('/', isAdmin, async (req, res) => {
         v.name as visitor_name,
         v.email as visitor_email,
         v.phone as visitor_phone,
-        v.company_name,
-        v.company_address,
         vs.staff_email,
         vs.reason,
         vs.status,
         vs.check_in_time as created_at,
-        vs.id as visit_id,
-        vs.visitor_type,
-        cvd.work_site,
-        cvd.project_detail,
-        cvd.supervising_department,
-        svd.material_supplied,
-        svd.receiving_department
+        vs.id as visit_id
+        -- v.company_name,
+        -- v.company_address,
+        -- vs.visitor_type,
+        -- cvd.work_site,
+        -- cvd.project_detail,
+        -- cvd.supervising_department,
+        -- svd.material_supplied,
+        -- svd.receiving_department
       FROM visits vs 
       JOIN visitors v ON vs.visitor_id = v.id 
-      LEFT JOIN contractor_visit_details cvd ON vs.id = cvd.visit_id
-      LEFT JOIN supplier_visit_details svd ON vs.id = svd.visit_id
+      -- LEFT JOIN contractor_visit_details cvd ON vs.id = cvd.visit_id
+      -- LEFT JOIN supplier_visit_details svd ON vs.id = svd.visit_id
       ORDER BY vs.check_in_time DESC
       LIMIT 50
     `);
