@@ -42,14 +42,24 @@ router.get('/', isAdmin, async (req, res) => {
         v.name as visitor_name,
         v.email as visitor_email,
         v.phone as visitor_phone,
+        v.company_name,
+        v.company_address,
         vs.staff_email,
         vs.reason,
         vs.status,
-        vs.visit_time as created_at,
-        vs.id as visit_id
+        vs.check_in_time as created_at,
+        vs.id as visit_id,
+        vs.visitor_type,
+        cvd.work_site,
+        cvd.project_detail,
+        cvd.supervising_department,
+        svd.material_supplied,
+        svd.receiving_department
       FROM visits vs 
       JOIN visitors v ON vs.visitor_id = v.id 
-      ORDER BY vs.visit_time DESC
+      LEFT JOIN contractor_visit_details cvd ON vs.id = cvd.visit_id
+      LEFT JOIN supplier_visit_details svd ON vs.id = svd.visit_id
+      ORDER BY vs.check_in_time DESC
       LIMIT 50
     `);
 
@@ -71,7 +81,7 @@ router.get('/', isAdmin, async (req, res) => {
     const [todayVisits] = await db.promise().query(`
       SELECT COUNT(*) as today_count
       FROM visits 
-      WHERE DATE(visit_time) = CURDATE()
+      WHERE DATE(check_in_time) = CURDATE()
     `);
 
     console.log('Today visits:', todayVisits[0].today_count);
@@ -146,11 +156,11 @@ router.get('/simple', isAdmin, async (req, res) => {
         vs.staff_email,
         vs.reason,
         vs.status,
-        vs.visit_time as created_at,
+        vs.check_in_time as created_at,
         vs.id as visit_id
       FROM visits vs 
       JOIN visitors v ON vs.visitor_id = v.id 
-      ORDER BY vs.visit_time DESC
+      ORDER BY vs.check_in_time DESC
       LIMIT 10
     `);
 
@@ -166,7 +176,7 @@ router.get('/simple', isAdmin, async (req, res) => {
     const [todayVisits] = await db.promise().query(`
       SELECT COUNT(*) as today_count
       FROM visits 
-      WHERE DATE(visit_time) = CURDATE()
+      WHERE DATE(check_in_time) = CURDATE()
     `);
 
     const dashboardData = {

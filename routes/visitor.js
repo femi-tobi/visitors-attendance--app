@@ -146,7 +146,29 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
     }
 
     console.log('Received registration data:', req.body);
-    const { name, email, phone, reason, staff_email, photo } = req.body;
+    const { 
+      name, email, phone, reason, staff_email, photo,
+      visitorType, 
+      visitor_company_name, visitor_company_address,
+      contractor_company_name, contractor_company_address,
+      contractor_work_site, contractor_project_detail, contractor_supervising_department,
+      supplier_company_name, supplier_company_address,
+      supplier_material_supplied, supplier_receiving_department
+    } = req.body;
+
+    // Determine company name and address based on visitor type
+    let company_name = '';
+    let company_address = '';
+    if (visitorType === 'visitor') {
+        company_name = visitor_company_name;
+        company_address = visitor_company_address;
+    } else if (visitorType === 'contractor') {
+        company_name = contractor_company_name;
+        company_address = contractor_company_address;
+    } else if (visitorType === 'supplier') {
+        company_name = supplier_company_name;
+        company_address = supplier_company_address;
+    }
 
     // Check if any required fields are missing
     if (!name || !email || !phone || !reason || !staff_email || !photo) {
@@ -193,15 +215,15 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
         console.log('Updating existing visitor:', visitorId);
         // Update visitor info
         await db.promise().query(
-          'UPDATE visitors SET name = ?, phone = ?, photo_path = ? WHERE id = ?',
-          [name, phone, publicPhotoPath, visitorId]
+          'UPDATE visitors SET name = ?, phone = ?, photo_path = ?, company_name = ?, company_address = ? WHERE id = ?',
+          [name, phone, publicPhotoPath, company_name, company_address, visitorId]
         );
       } else {
         console.log('Creating new visitor');
         // Create new visitor
         const [result] = await db.promise().query(
-          'INSERT INTO visitors(name, email, phone, photo_path) VALUES (?, ?, ?, ?)',
-          [name, email, phone, publicPhotoPath]
+          'INSERT INTO visitors(name, email, phone, photo_path, company_name, company_address) VALUES (?, ?, ?, ?, ?, ?)',
+          [name, email, phone, publicPhotoPath, company_name, company_address]
         );
         visitorId = result.insertId;
         console.log('New visitor created with ID:', visitorId);
@@ -209,10 +231,24 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
 
       // Create visit record
       console.log('Creating visit record');
-      await db.promise().query(
-        'INSERT INTO visits(visitor_id, staff_email, reason) VALUES (?, ?, ?)',
-        [visitorId, staff_email, reason]
+      const [visitResult] = await db.promise().query(
+        'INSERT INTO visits(visitor_id, staff_email, reason, visitor_type) VALUES (?, ?, ?, ?)',
+        [visitorId, staff_email, reason, visitorType]
       );
+      const visitId = visitResult.insertId;
+
+      // Insert type-specific details
+      if (visitorType === 'contractor') {
+          await db.promise().query(
+              'INSERT INTO contractor_visit_details(visit_id, work_site, project_detail, supervising_department) VALUES (?, ?, ?, ?)',
+              [visitId, contractor_work_site, contractor_project_detail, contractor_supervising_department]
+          );
+      } else if (visitorType === 'supplier') {
+          await db.promise().query(
+              'INSERT INTO supplier_visit_details(visit_id, material_supplied, receiving_department) VALUES (?, ?, ?)',
+              [visitId, supplier_material_supplied, supplier_receiving_department]
+          );
+      }
 
       // Send email
       const mailOptions = {

@@ -146,6 +146,7 @@
           <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visitor</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -171,6 +172,23 @@
                       </div>
                     </div>
                   </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div class="font-medium text-gray-800 capitalize"><%= visit.visitor_type %></div>
+                    <% if (visit.company_name) { %>
+                      <div><%= visit.company_name %></div>
+                    <% } %>
+                    <% if (visit.visitor_type === 'contractor') { %>
+                      <div class="text-xs text-gray-600 mt-1">
+                        <strong>Site:</strong> <%= visit.work_site %><br>
+                        <strong>Project:</strong> <%= visit.project_detail %>
+                      </div>
+                    <% } else if (visit.visitor_type === 'supplier') { %>
+                        <div class="text-xs text-gray-600 mt-1">
+                          <strong>Material:</strong> <%= visit.material_supplied %><br>
+                          <strong>Dept:</strong> <%= visit.receiving_department %>
+                        </div>
+                    <% } %>
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= visit.staff_email || 'No staff' %></td>
                   <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate"><%= visit.reason || 'No reason' %></td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -194,7 +212,7 @@
               <% }); %>
             <% } else { %>
               <tr>
-                <td colspan="6" class="px-6 py-4 text-center text-gray-500">No visits found</td>
+                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No visits found</td>
               </tr>
             <% } %>
           </tbody>
