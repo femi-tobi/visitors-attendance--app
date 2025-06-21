@@ -84,6 +84,67 @@ async function checkDatabase() {
       console.log('Visits table already exists.');
     }
     
+    // Apply schema changes for visitor types
+    console.log('Checking for visitor type schema changes...');
+
+    const connection = db.promise();
+
+    // Check for company_name and company_address in visitors
+    const [companyCols] = await connection.query("SHOW COLUMNS FROM visitors LIKE 'company_name'");
+    if (companyCols.length === 0) {
+        console.log('Adding company_name and company_address to visitors table...');
+        await connection.query(
+            `ALTER TABLE visitors
+             ADD COLUMN company_name VARCHAR(255) NULL,
+             ADD COLUMN company_address VARCHAR(255) NULL`
+        );
+        console.log('Columns added to visitors.');
+    }
+
+    // Check for visitor_type in visits
+    const [visitorTypeCol] = await connection.query("SHOW COLUMNS FROM visits LIKE 'visitor_type'");
+    if (visitorTypeCol.length === 0) {
+        console.log('Adding visitor_type to visits table...');
+        await connection.query(
+            `ALTER TABLE visits
+             ADD COLUMN visitor_type ENUM('visitor', 'contractor', 'supplier') NOT NULL DEFAULT 'visitor'`
+        );
+        console.log('Column added to visits.');
+    }
+
+    // Check for contractor_visit_details table
+    const [contractorTable] = await connection.query("SHOW TABLES LIKE 'contractor_visit_details'");
+    if (contractorTable.length === 0) {
+        console.log('Creating contractor_visit_details table...');
+        await connection.query(`
+            CREATE TABLE contractor_visit_details (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                visit_id INT NOT NULL,
+                work_site VARCHAR(255),
+                project_detail TEXT,
+                supervising_department VARCHAR(255),
+                FOREIGN KEY (visit_id) REFERENCES visits(id) ON DELETE CASCADE
+            )
+        `);
+        console.log('contractor_visit_details table created.');
+    }
+
+    // Check for supplier_visit_details table
+    const [supplierTable] = await connection.query("SHOW TABLES LIKE 'supplier_visit_details'");
+    if (supplierTable.length === 0) {
+        console.log('Creating supplier_visit_details table...');
+        await connection.query(`
+            CREATE TABLE supplier_visit_details (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                visit_id INT NOT NULL,
+                material_supplied VARCHAR(255),
+                receiving_department VARCHAR(255),
+                FOREIGN KEY (visit_id) REFERENCES visits(id) ON DELETE CASCADE
+            )
+        `);
+        console.log('supplier_visit_details table created.');
+    }
+    
     // Test query to staff table
     const [staff] = await db.promise().query('SELECT COUNT(*) as count FROM staff');
     console.log(`Staff table has ${staff[0].count} records.`);
