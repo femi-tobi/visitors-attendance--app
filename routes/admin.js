@@ -340,4 +340,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Admin login page - GET route
+router.get('/login', (req, res) => {
+  res.render('admin/login');
+});
+
 module.exports = router;
