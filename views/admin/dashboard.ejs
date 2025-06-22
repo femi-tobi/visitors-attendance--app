@@ -319,11 +319,13 @@
     
     rows.forEach(function(row) {
       if (row.style.display !== 'none') {
-        const visitorType = row.querySelector('td:nth-child(2) span');
-        if (visitorType) {
-          if (visitorType.textContent.trim() === 'Visitor') visitorCount++;
-          else if (visitorType.textContent.trim() === 'Contractor') contractorCount++;
-          else if (visitorType.textContent.trim() === 'Supplier') supplierCount++;
+        const visitorTypeSpan = row.querySelector('td:nth-child(2) span');
+        if (visitorTypeSpan) {
+          const visitorTypeText = visitorTypeSpan.textContent.trim();
+          console.log('Found visitor type:', visitorTypeText); // Debug log
+          if (visitorTypeText === 'Visitor') visitorCount++;
+          else if (visitorTypeText === 'Contractor') contractorCount++;
+          else if (visitorTypeText === 'Supplier') supplierCount++;
         }
       }
     });
@@ -331,6 +333,8 @@
     document.getElementById('visitorCount').textContent = visitorCount;
     document.getElementById('contractorCount').textContent = contractorCount;
     document.getElementById('supplierCount').textContent = supplierCount;
+    
+    console.log('Updated stats - Visitors:', visitorCount, 'Contractors:', contractorCount, 'Suppliers:', supplierCount); // Debug log
   }
 
   // Initialize statistics
@@ -349,9 +353,11 @@
     var visitorType = document.getElementById('visitorTypeFilter').value;
     var rows = document.querySelectorAll('#visitsTable tbody tr');
     
+    console.log('Applying filters - Date range:', start, 'to', end, 'Visitor type:', visitorType); // Debug log
+    
     rows.forEach(function(row) {
-      var dateCell = row.querySelector('td:nth-child(6)');
-      var visitorTypeCell = row.querySelector('td:nth-child(2) span');
+      var dateCell = row.querySelector('td:nth-child(6)'); // Date column (6th column)
+      var visitorTypeCell = row.querySelector('td:nth-child(2) span'); // Details column (2nd column)
       if (!dateCell) return;
       
       var dateText = dateCell.childNodes[0].textContent.trim();
@@ -374,6 +380,7 @@
       // Visitor type filtering
       if (visitorType && visitorTypeCell) {
         var rowVisitorType = visitorTypeCell.textContent.trim();
+        console.log('Comparing visitor type:', rowVisitorType, 'with filter:', visitorType); // Debug log
         if (rowVisitorType !== visitorType) show = false;
       }
       
