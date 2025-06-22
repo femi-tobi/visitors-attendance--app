@@ -486,4 +486,9 @@ router.post('/visit/:id/tag', isAdmin, async (req, res) => {
   }
 });
 
+// Alias: /admin/dashboard redirects to /admin/
+router.get('/dashboard', isAdmin, (req, res) => {
+  res.redirect('/admin');
+});
+
 module.exports = router; 
