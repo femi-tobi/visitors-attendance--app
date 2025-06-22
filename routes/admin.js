@@ -48,6 +48,7 @@ router.get('/', isAdmin, async (req, res) => {
         vs.reason,
         vs.status,
         vs.visit_time as created_at,
+        vs.check_out_time,
         vs.id as visit_id,
         vs.visitor_type,
         vs.tag_number,
@@ -65,6 +66,7 @@ router.get('/', isAdmin, async (req, res) => {
     `);
 
     console.log('Visits loaded:', visits.length);
+    console.log('Visits data:', visits);
 
     // Get statistics
     const [stats] = await db.promise().query(`
@@ -330,165 +332,10 @@ router.post('/login', async (req, res) => {
       `);
     }
   } catch (error) {
-    console.error('❌ Error in admin login:', error);
-    console.error('Error stack:', error.stack);
-    return res.status(500).send(`
-      <h1>Server Error</h1>
-      <p>Login error occurred: ${error.message}</p>
-      <a href="/admin/login">Back to Login</a>
-    `);
+    console.error('Error in login handler:', error);
+    res.status(500).render('error', { 
+      message: 'Login failed',
+      error: error.message 
+    });
   }
 });
-
-// Admin login page - GET route
-router.get('/login', (req, res) => {
-  res.render('admin/login');
-});
-
-// Admin logout
-router.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/admin/login');
-});
-
-// Staff management page
-router.get('/staff', isAdmin, async (req, res) => {
-  try {
-    const [staff] = await db.promise().query(
-      'SELECT * FROM staff ORDER BY name'
-    );
-    res.render('admin/staff', { staff });
-  } catch (error) {
-    console.error('Error fetching staff:', error);
-    res.status(500).render('error', { message: 'Failed to fetch staff list' });
-  }
-});
-
-// Add new staff member
-router.post('/staff', isAdmin, [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Valid email is required')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name');
-      return res.render('admin/staff', { 
-        staff,
-        errors: errors.array(),
-        formData: req.body 
-      });
-    }
-
-    const { name, email } = req.body;
-    await db.promise().execute(
-      'INSERT INTO staff (name, email) VALUES (?, ?)',
-      [name, email]
-    );
-
-    res.redirect('/admin/staff');
-  } catch (error) {
-    console.error('Error adding staff:', error);
-    if (error.code === 'ER_DUP_ENTRY') {
-      const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name');
-      return res.render('admin/staff', {
-        staff,
-        errors: [{ msg: 'Email already exists' }],
-        formData: req.body
-      });
-    }
-    res.status(500).render('error', { message: 'Failed to add staff member' });
-  }
-});
-
-// Edit staff member
-router.post('/staff/:id', isAdmin, [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Valid email is required')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name');
-      return res.render('admin/staff', {
-        staff,
-        errors: errors.array(),
-        formData: { ...req.body, id: req.params.id }
-      });
-    }
-
-    const { name, email } = req.body;
-    await db.promise().execute(
-      'UPDATE staff SET name = ?, email = ? WHERE id = ?',
-      [name, email, req.params.id]
-    );
-
-    res.redirect('/admin/staff');
-  } catch (error) {
-    console.error('Error updating staff:', error);
-    if (error.code === 'ER_DUP_ENTRY') {
-      const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name');
-      return res.render('admin/staff', {
-        staff,
-        errors: [{ msg: 'Email already exists' }],
-        formData: { ...req.body, id: req.params.id }
-      });
-    }
-    res.status(500).render('error', { message: 'Failed to update staff member' });
-  }
-});
-
-// Delete staff member
-router.post('/staff/:id/delete', isAdmin, async (req, res) => {
-  try {
-    await db.promise().execute(
-      'DELETE FROM staff WHERE id = ?',
-      [req.params.id]
-    );
-    res.redirect('/admin/staff');
-  } catch (error) {
-    console.error('Error deleting staff:', error);
-    res.status(500).render('error', { message: 'Failed to delete staff member' });
-  }
-});
-
-// Add route to set tag_number for a visit
-router.post('/visit/:id/tag', isAdmin, async (req, res) => {
-  const visitId = req.params.id;
-  const { tag_number } = req.body;
-  if (!tag_number || !tag_number.trim()) {
-    return res.status(400).json({ success: false, message: 'Tag number is required.' });
-  }
-  try {
-    // Only allow if status is 'allowed' and tag_number is NULL
-    const [rows] = await db.promise().query(
-      'SELECT status, tag_number FROM visits WHERE id = ?',
-      [visitId]
-    );
-    if (!rows.length) {
-      return res.status(404).json({ success: false, message: 'Visit not found.' });
-    }
-    const visit = rows[0];
-    if (visit.status !== 'allowed') {
-      return res.status(400).json({ success: false, message: 'Tag number can only be set for allowed visits.' });
-    }
-    if (visit.tag_number) {
-      return res.status(400).json({ success: false, message: 'Tag number already set.' });
-    }
-    await db.promise().query(
-      'UPDATE visits SET tag_number = ? WHERE id = ?',
-      [tag_number, visitId]
-    );
-    return res.json({ success: true, tag_number });
-  } catch (error) {
-    console.error('Error setting tag number:', error);
-    return res.status(500).json({ success: false, message: 'Failed to set tag number.' });
-  }
-});
-
-// Alias: /admin/dashboard redirects to /admin/
-router.get('/dashboard', isAdmin, (req, res) => {
-  res.redirect('/admin');
-});
-
-module.exports = router; 
