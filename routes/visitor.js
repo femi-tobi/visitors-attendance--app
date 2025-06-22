@@ -90,7 +90,7 @@ const validateReturningVisitor = [
 
 // Serve the form
 router.get('/', (req, res) => {
-  res.sendFile('index.html', { root: './views' });
+  res.sendFile(path.join(__dirname, '../views/index.html'));
 });
 
 // Search for existing visitor
