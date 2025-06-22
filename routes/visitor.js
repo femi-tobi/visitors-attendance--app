@@ -265,11 +265,11 @@ router.post('/register/new', upload.none(), validateNewVisitor, async (req, res)
             <p><strong>Reason:</strong><br>${reason}</p>
             <p><em>Visitor's photo is attached to this email.</em></p>
             <div style="margin: 30px 0;">
-              <a href="${config.app.baseUrl}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
+              <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                  style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                  ✅ Allow
               </a>
-              <a href="${config.app.baseUrl}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
+              <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
                  style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                  ❌ Deny
               </a>
@@ -373,11 +373,11 @@ router.post('/register/returning', upload.none(), validateReturningVisitor, asyn
           <p><strong>Reason:</strong><br>${reason}</p>
           ${attachments.length > 0 ? '<p><em>Visitor\'s photo is attached to this email.</em></p>' : ''}
           <div style="margin: 30px 0;">
-            <a href="${config.app.baseUrl}/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
+            <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                ✅ Allow
             </a>
-            <a href="${config.app.baseUrl}/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
+            <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
                style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                ❌ Deny
             </a>
