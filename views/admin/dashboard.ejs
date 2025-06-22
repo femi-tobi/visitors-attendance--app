@@ -23,7 +23,7 @@
 
   <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-6 mb-8">
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-5">
           <div class="flex items-center">
@@ -123,6 +123,67 @@
           </div>
         </div>
       </div>
+
+      <!-- Visitor Type Statistics -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-blue-400 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Visitors</dt>
+                <dd class="text-lg font-medium text-gray-900" id="visitorCount">-</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Contractors</dt>
+                <dd class="text-lg font-medium text-gray-900" id="contractorCount">-</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-green-600 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Suppliers</dt>
+                <dd class="text-lg font-medium text-gray-900" id="supplierCount">-</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Recent Visits Table -->
@@ -133,6 +194,12 @@
           <p class="mt-1 max-w-2xl text-sm text-gray-500">Latest visitor requests and their status</p>
         </div>
         <div class="flex flex-col md:flex-row gap-2 items-center">
+          <select id="visitorTypeFilter" class="border rounded px-2 py-1">
+            <option value="">All Types</option>
+            <option value="visitor">Visitors</option>
+            <option value="contractor">Contractors</option>
+            <option value="supplier">Suppliers</option>
+          </select>
           <input type="date" id="startDate" class="border rounded px-2 py-1" />
           <span class="mx-1">to</span>
           <input type="date" id="endDate" class="border rounded px-2 py-1" />
@@ -173,19 +240,39 @@
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div class="font-medium text-gray-800 capitalize"><%= visit.visitor_type %></div>
-                    <% if (visit.company_name) { %>
-                      <div><%= visit.company_name %></div>
-                    <% } %>
-                    <% if (visit.visitor_type === 'contractor') { %>
-                      <div class="text-xs text-gray-600 mt-1">
-                        <strong>Site:</strong> <%= visit.work_site %><br>
-                        <strong>Project:</strong> <%= visit.project_detail %>
-                      </div>
+                    <% if (visit.visitor_type === 'visitor') { %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Visitor
+                      </span>
+                    <% } else if (visit.visitor_type === 'contractor') { %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        Contractor
+                      </span>
                     <% } else if (visit.visitor_type === 'supplier') { %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Supplier
+                      </span>
+                    <% } %>
+                    <% if (visit.company_name) { %>
+                      <div class="mt-1 text-xs text-gray-600"><%= visit.company_name %></div>
+                    <% } %>
+                    <% if (visit.visitor_type === 'contractor' && (visit.work_site || visit.project_detail)) { %>
+                      <div class="text-xs text-gray-600 mt-1">
+                        <% if (visit.work_site) { %>
+                          <strong>Site:</strong> <%= visit.work_site %><br>
+                        <% } %>
+                        <% if (visit.project_detail) { %>
+                          <strong>Project:</strong> <%= visit.project_detail %>
+                        <% } %>
+                      </div>
+                    <% } else if (visit.visitor_type === 'supplier' && (visit.material_supplied || visit.receiving_department)) { %>
                         <div class="text-xs text-gray-600 mt-1">
-                          <strong>Material:</strong> <%= visit.material_supplied %><br>
-                          <strong>Dept:</strong> <%= visit.receiving_department %>
+                          <% if (visit.material_supplied) { %>
+                            <strong>Material:</strong> <%= visit.material_supplied %><br>
+                          <% } %>
+                          <% if (visit.receiving_department) { %>
+                            <strong>Dept:</strong> <%= visit.receiving_department %>
+                          <% } %>
                         </div>
                     <% } %>
                   </td>
@@ -223,47 +310,92 @@
 </body>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+  // Populate visitor type statistics
+  function updateVisitorTypeStats() {
+    const rows = document.querySelectorAll('#visitsTable tbody tr');
+    let visitorCount = 0;
+    let contractorCount = 0;
+    let supplierCount = 0;
+    
+    rows.forEach(function(row) {
+      if (row.style.display !== 'none') {
+        const visitorType = row.querySelector('td:nth-child(2) span');
+        if (visitorType) {
+          if (visitorType.textContent.trim() === 'Visitor') visitorCount++;
+          else if (visitorType.textContent.trim() === 'Contractor') contractorCount++;
+          else if (visitorType.textContent.trim() === 'Supplier') supplierCount++;
+        }
+      }
+    });
+    
+    document.getElementById('visitorCount').textContent = visitorCount;
+    document.getElementById('contractorCount').textContent = contractorCount;
+    document.getElementById('supplierCount').textContent = supplierCount;
+  }
+
+  // Initialize statistics
+  updateVisitorTypeStats();
+
   document.getElementById('exportExcelBtn').addEventListener('click', function () {
     var table = document.getElementById('visitsTable');
     var wb = XLSX.utils.table_to_book(table, {sheet: "Visits"});
     XLSX.writeFile(wb, 'visits.xlsx');
   });
 
-  // Date filter logic
-  document.getElementById('filterDateBtn').addEventListener('click', function () {
+  // Enhanced filter function
+  function applyFilters() {
     var start = document.getElementById('startDate').value;
     var end = document.getElementById('endDate').value;
+    var visitorType = document.getElementById('visitorTypeFilter').value;
     var rows = document.querySelectorAll('#visitsTable tbody tr');
+    
     rows.forEach(function(row) {
-      var dateCell = row.querySelector('td:nth-child(5)');
+      var dateCell = row.querySelector('td:nth-child(6)');
+      var visitorTypeCell = row.querySelector('td:nth-child(2) span');
       if (!dateCell) return;
+      
       var dateText = dateCell.childNodes[0].textContent.trim();
-      if (!dateText || dateText === 'Unknown') {
-        row.style.display = '';
-        return;
-      }
-      var rowDate = new Date(dateText);
       var show = true;
-      if (start) {
-        var startDate = new Date(start);
-        if (rowDate < startDate) show = false;
+      
+      // Date filtering
+      if (dateText && dateText !== 'Unknown') {
+        var rowDate = new Date(dateText);
+        if (start) {
+          var startDate = new Date(start);
+          if (rowDate < startDate) show = false;
+        }
+        if (end) {
+          var endDate = new Date(end);
+          endDate.setDate(endDate.getDate() + 1);
+          if (rowDate >= endDate) show = false;
+        }
       }
-      if (end) {
-        var endDate = new Date(end);
-        // Add 1 day to endDate to make it inclusive
-        endDate.setDate(endDate.getDate() + 1);
-        if (rowDate >= endDate) show = false;
+      
+      // Visitor type filtering
+      if (visitorType && visitorTypeCell) {
+        var rowVisitorType = visitorTypeCell.textContent.trim();
+        if (rowVisitorType !== visitorType) show = false;
       }
+      
       row.style.display = show ? '' : 'none';
     });
-  });
+    
+    updateVisitorTypeStats();
+  }
+
+  // Event listeners for filtering
+  document.getElementById('filterDateBtn').addEventListener('click', applyFilters);
+  document.getElementById('visitorTypeFilter').addEventListener('change', applyFilters);
+  
   document.getElementById('clearFilterBtn').addEventListener('click', function () {
     document.getElementById('startDate').value = '';
     document.getElementById('endDate').value = '';
+    document.getElementById('visitorTypeFilter').value = '';
     var rows = document.querySelectorAll('#visitsTable tbody tr');
     rows.forEach(function(row) {
       row.style.display = '';
     });
+    updateVisitorTypeStats();
   });
 </script>
 </html> 
