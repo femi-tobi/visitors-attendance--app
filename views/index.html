@@ -611,15 +611,28 @@
 
     // Visitor Type dynamic questions
     document.getElementById('visitorType').addEventListener('change', function() {
+      // Hide all question sections first
       document.getElementById('visitorQuestions').classList.add('hidden');
       document.getElementById('contractorQuestions').classList.add('hidden');
       document.getElementById('supplierQuestions').classList.add('hidden');
+      
+      // Remove required attribute from all fields
+      const allFields = document.querySelectorAll('#visitorQuestions input, #contractorQuestions input, #supplierQuestions input');
+      allFields.forEach(field => field.removeAttribute('required'));
+      
+      // Show and make required the fields for the selected type
       if (this.value === 'visitor') {
         document.getElementById('visitorQuestions').classList.remove('hidden');
+        const visitorFields = document.querySelectorAll('#visitorQuestions input');
+        visitorFields.forEach(field => field.setAttribute('required', 'required'));
       } else if (this.value === 'contractor') {
         document.getElementById('contractorQuestions').classList.remove('hidden');
+        const contractorFields = document.querySelectorAll('#contractorQuestions input');
+        contractorFields.forEach(field => field.setAttribute('required', 'required'));
       } else if (this.value === 'supplier') {
         document.getElementById('supplierQuestions').classList.remove('hidden');
+        const supplierFields = document.querySelectorAll('#supplierQuestions input');
+        supplierFields.forEach(field => field.setAttribute('required', 'required'));
       }
     });
   </script>
