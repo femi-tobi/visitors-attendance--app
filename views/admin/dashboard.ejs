@@ -381,7 +381,7 @@
       if (visitorType && visitorTypeCell) {
         var rowVisitorType = visitorTypeCell.textContent.trim();
         console.log('Comparing visitor type:', rowVisitorType, 'with filter:', visitorType); // Debug log
-        if (rowVisitorType !== visitorType) show = false;
+        if (rowVisitorType.trim().toLowerCase() !== visitorType.trim().toLowerCase()) show = false;
       }
       
       row.style.display = show ? '' : 'none';
