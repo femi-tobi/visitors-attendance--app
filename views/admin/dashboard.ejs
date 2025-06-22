@@ -305,7 +305,10 @@
                         <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">Sign Out</button>
                       </form>
                     <% } else { %>
-                      <span class="text-green-700">Signed out at <%= new Date(visit.check_out_time).toLocaleString() %></span>
+                      <span class="text-green-700 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                        Signed out at <%= new Date(visit.check_out_time).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                      </span>
                     <% } %>
                   </td>
                 </tr>
