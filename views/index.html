@@ -478,7 +478,7 @@
 
       staffDebounceTimer = setTimeout(async () => {
         try {
-          const response = await fetch(`/search-staff?query=${encodeURIComponent(query)}`);
+          const response = await fetch(`/visitor/search-staff?query=${encodeURIComponent(query)}`);
           const data = await response.json();
           
           if (data.length > 0) {
@@ -550,7 +550,7 @@
 
       returningStaffDebounceTimer = setTimeout(async () => {
         try {
-          const response = await fetch(`/search-staff?query=${encodeURIComponent(query)}`);
+          const response = await fetch(`/visitor/search-staff?query=${encodeURIComponent(query)}`);
           const data = await response.json();
           
           if (data.length > 0) {
