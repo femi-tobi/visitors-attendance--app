@@ -38,7 +38,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Routes
-app.use('/', visitorRoutes);
+app.use('/visitor', visitorRoutes);
 app.use('/admin', adminRoutes);
 
 app.get('/', (req, res) => {
