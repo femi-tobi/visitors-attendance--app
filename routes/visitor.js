@@ -488,10 +488,10 @@ router.post('/checkout/:visitId', async (req, res) => {
       'UPDATE visits SET check_out_time = CURRENT_TIMESTAMP WHERE id = ? AND check_out_time IS NULL',
       [req.params.visitId]
     );
-    res.json({ success: true });
+    res.redirect('/admin/dashboard');
   } catch (error) {
     console.error('Checkout error:', error);
-    res.status(500).json({ error: 'Checkout failed' });
+    res.status(500).send('Checkout failed');
   }
 });
 

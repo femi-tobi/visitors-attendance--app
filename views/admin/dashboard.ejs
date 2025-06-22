@@ -300,7 +300,13 @@
                     <span class="text-xs text-gray-400"><%= visit.created_at ? new Date(visit.created_at).toLocaleTimeString() : '' %></span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <span class="text-gray-400">-</span>
+                    <% if (!visit.check_out_time) { %>
+                      <form action="/visitor/checkout/<%= visit.visit_id %>" method="POST" style="display:inline;">
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">Sign Out</button>
+                      </form>
+                    <% } else { %>
+                      <span class="text-green-700">Signed out at <%= new Date(visit.check_out_time).toLocaleString() %></span>
+                    <% } %>
                   </td>
                 </tr>
               <% }); %>
