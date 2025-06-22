@@ -280,11 +280,18 @@
                   <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate"><%= visit.reason || 'No reason' %></td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <% if (visit.status === 'allowed') { %>
-                      <span class="text-green-600">Approved</span>
-                    <% } else if (visit.status === 'denied') { %>
-                      <span class="text-red-600">Denied</span>
+                      <% if (!visit.tag_number) { %>
+                        <form class="tag-number-form flex items-center" data-visit-id="<%= visit.visit_id %>" onsubmit="return false;">
+                          <input type="text" name="tag_number" placeholder="Enter tag number" class="border rounded px-2 py-1 mr-2" required />
+                          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">Set Tag</button>
+                        </form>
+                        <span class="tag-number-success text-green-600 text-xs hidden ml-2">Saved!</span>
+                        <span class="tag-number-error text-red-600 text-xs hidden ml-2"></span>
+                      <% } else { %>
+                        <span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Tag #: <%= visit.tag_number %></span>
+                      <% } %>
                     <% } else { %>
-                      <span class="text-yellow-600">Pending</span>
+                      <span class="text-gray-400">-</span>
                     <% } %>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -403,6 +410,46 @@
       row.style.display = '';
     });
     updateVisitorTypeStats();
+  });
+
+  // Tag number AJAX submission
+  document.querySelectorAll('.tag-number-form').forEach(function(form) {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const visitId = form.getAttribute('data-visit-id');
+      const input = form.querySelector('input[name="tag_number"]');
+      const tagNumber = input.value.trim();
+      const successMsg = form.nextElementSibling;
+      const errorMsg = successMsg.nextElementSibling;
+      successMsg.classList.add('hidden');
+      errorMsg.classList.add('hidden');
+      if (!tagNumber) return;
+      try {
+        const res = await fetch(`/admin/visit/${visitId}/tag`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag_number: tagNumber })
+        });
+        const data = await res.json();
+        if (data.success) {
+          input.disabled = true;
+          form.querySelector('button[type="submit"]').disabled = true;
+          successMsg.classList.remove('hidden');
+          form.style.display = 'none';
+          // Optionally, show the tag number in place
+          const tagSpan = document.createElement('span');
+          tagSpan.className = 'inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold';
+          tagSpan.textContent = `Tag #: ${tagNumber}`;
+          form.parentNode.insertBefore(tagSpan, form.nextSibling);
+        } else {
+          errorMsg.textContent = data.message || 'Failed to save tag number.';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Network error.';
+        errorMsg.classList.remove('hidden');
+      }
+    });
   });
 </script>
 </html> 

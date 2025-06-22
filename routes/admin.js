@@ -50,6 +50,7 @@ router.get('/', isAdmin, async (req, res) => {
         vs.visit_time as created_at,
         vs.id as visit_id,
         vs.visitor_type,
+        vs.tag_number,
         cvd.work_site,
         cvd.project_detail,
         cvd.supervising_department,
@@ -448,6 +449,40 @@ router.post('/staff/:id/delete', isAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error deleting staff:', error);
     res.status(500).render('error', { message: 'Failed to delete staff member' });
+  }
+});
+
+// Add route to set tag_number for a visit
+router.post('/visit/:id/tag', isAdmin, async (req, res) => {
+  const visitId = req.params.id;
+  const { tag_number } = req.body;
+  if (!tag_number || !tag_number.trim()) {
+    return res.status(400).json({ success: false, message: 'Tag number is required.' });
+  }
+  try {
+    // Only allow if status is 'allowed' and tag_number is NULL
+    const [rows] = await db.promise().query(
+      'SELECT status, tag_number FROM visits WHERE id = ?',
+      [visitId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: 'Visit not found.' });
+    }
+    const visit = rows[0];
+    if (visit.status !== 'allowed') {
+      return res.status(400).json({ success: false, message: 'Tag number can only be set for allowed visits.' });
+    }
+    if (visit.tag_number) {
+      return res.status(400).json({ success: false, message: 'Tag number already set.' });
+    }
+    await db.promise().query(
+      'UPDATE visits SET tag_number = ? WHERE id = ?',
+      [tag_number, visitId]
+    );
+    return res.json({ success: true, tag_number });
+  } catch (error) {
+    console.error('Error setting tag number:', error);
+    return res.status(500).json({ success: false, message: 'Failed to set tag number.' });
   }
 });
 
