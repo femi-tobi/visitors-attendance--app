@@ -98,9 +98,10 @@ router.get('/search', async (req, res) => {
   const { query } = req.query;
   try {
     const sql = `
-      SELECT id, name, email, phone, visitor_type, company_name
-      FROM visitors 
-      WHERE name LIKE ? OR email LIKE ?
+      SELECT v.id, v.name, v.email, v.phone, v.company_name,
+        (SELECT visitor_type FROM visits WHERE visitor_id = v.id ORDER BY id DESC LIMIT 1) as visitor_type
+      FROM visitors v
+      WHERE v.name LIKE ? OR v.email LIKE ?
       LIMIT 5
     `;
     const searchQuery = `%${query}%`;
