@@ -98,7 +98,7 @@ router.get('/search', async (req, res) => {
   const { query } = req.query;
   try {
     const sql = `
-      SELECT id, name, email, phone 
+      SELECT id, name, email, phone, visitor_type, company_name
       FROM visitors 
       WHERE name LIKE ? OR email LIKE ?
       LIMIT 5

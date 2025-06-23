@@ -216,6 +216,8 @@
             <h3 class="font-medium text-gray-900" id="visitor_name"></h3>
             <p class="text-gray-600 text-sm" id="visitor_email"></p>
             <p class="text-gray-600 text-sm" id="visitor_phone"></p>
+            <p class="text-gray-600 text-sm" id="visitor_type"></p>
+            <p class="text-gray-600 text-sm" id="visitor_company"></p>
           </div>
 
           <div>
@@ -339,15 +341,18 @@
     function fillVisitorData(visitor) {
       console.log('Filling visitor data:', visitor);
       console.log('Visitor ID:', visitor.id);
-      
       document.getElementById('visitor_id').value = visitor.id;
       document.getElementById('visitor_name').textContent = visitor.name;
       document.getElementById('visitor_email').textContent = visitor.email;
       document.getElementById('visitor_phone').textContent = visitor.phone;
-      
+      let typeLabel = '';
+      if (visitor.visitor_type === 'contractor') typeLabel = 'Contractor';
+      else if (visitor.visitor_type === 'supplier') typeLabel = 'Supplier';
+      else typeLabel = 'Visitor';
+      document.getElementById('visitor_type').textContent = 'Type: ' + typeLabel;
+      document.getElementById('visitor_company').textContent = visitor.company_name ? ('Company: ' + visitor.company_name) : '';
       // Verify the visitor_id was set
       console.log('visitor_id field value after setting:', document.getElementById('visitor_id').value);
-      
       newVisitorForm.classList.add('hidden');
       returningVisitorForm.classList.remove('hidden');
       searchResults.classList.add('hidden');
@@ -430,6 +435,8 @@
               document.getElementById('visitor_name').textContent = '';
               document.getElementById('visitor_email').textContent = '';
               document.getElementById('visitor_phone').textContent = '';
+              document.getElementById('visitor_type').textContent = '';
+              document.getElementById('visitor_company').textContent = '';
               
               // Remove visual feedback
               const successIndicator = document.querySelector('.success-indicator');
