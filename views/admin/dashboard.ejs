@@ -212,8 +212,11 @@
         <table id="visitsTable" class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visitor</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visitor Type</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -225,55 +228,17 @@
             <% if (visits && visits.length > 0) { %>
               <% visits.forEach(function(visit) { %>
                 <tr>
+                  <td class="px-6 py-4 whitespace-nowrap"><%= visit.visitor_name || 'Unknown' %></td>
+                  <td class="px-6 py-4 whitespace-nowrap"><%= visit.visitor_email || 'No email' %></td>
+                  <td class="px-6 py-4 whitespace-nowrap"><%= visit.visitor_phone || 'No phone' %></td>
+                  <td class="px-6 py-4 whitespace-nowrap"><%= visit.company_name || '' %></td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-10 w-10">
-                        <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span class="text-sm font-medium text-gray-700"><%= visit.visitor_name ? visit.visitor_name.charAt(0).toUpperCase() : '?' %></span>
-                        </div>
-                      </div>
-                      <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900"><%= visit.visitor_name || 'Unknown' %></div>
-                        <div class="text-sm text-gray-500"><%= visit.visitor_email || 'No email' %></div>
-                        <div class="text-sm text-gray-500"><%= visit.visitor_phone || 'No phone' %></div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <% if (visit.visitor_type === 'visitor') { %>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Visitor
-                      </span>
+                      Visitor
                     <% } else if (visit.visitor_type === 'contractor') { %>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                        Contractor
-                      </span>
+                      Contractor
                     <% } else if (visit.visitor_type === 'supplier') { %>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Supplier
-                      </span>
-                    <% } %>
-                    <% if (visit.company_name) { %>
-                      <div class="mt-1 text-xs text-gray-600"><%= visit.company_name %></div>
-                    <% } %>
-                    <% if (visit.visitor_type === 'contractor' && (visit.work_site || visit.project_detail)) { %>
-                      <div class="text-xs text-gray-600 mt-1">
-                        <% if (visit.work_site) { %>
-                          <strong>Site:</strong> <%= visit.work_site %><br>
-                        <% } %>
-                        <% if (visit.project_detail) { %>
-                          <strong>Project:</strong> <%= visit.project_detail %>
-                        <% } %>
-                      </div>
-                    <% } else if (visit.visitor_type === 'supplier' && (visit.material_supplied || visit.receiving_department)) { %>
-                        <div class="text-xs text-gray-600 mt-1">
-                          <% if (visit.material_supplied) { %>
-                            <strong>Material:</strong> <%= visit.material_supplied %><br>
-                          <% } %>
-                          <% if (visit.receiving_department) { %>
-                            <strong>Dept:</strong> <%= visit.receiving_department %>
-                          <% } %>
-                        </div>
+                      Supplier
                     <% } %>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= visit.staff_email || 'No staff' %></td>
@@ -315,7 +280,7 @@
               <% }); %>
             <% } else { %>
               <tr>
-                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No visits found</td>
+                <td colspan="10" class="px-6 py-4 text-center text-gray-500">No visits found</td>
               </tr>
             <% } %>
           </tbody>
