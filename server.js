@@ -42,10 +42,8 @@ if (!fs.existsSync(uploadDir)) {
 // Routes
 const server = http.createServer(app);
 const io = new Server(server);
-app.use('/visitor', (req, res, next) => {
-  req.io = io;
-  require('./routes/visitor')(req, res, next);
-});
+const visitorRouter = require('./routes/visitor')(io);
+app.use('/visitor', visitorRouter);
 app.use('/admin', adminRoutes);
 
 app.get('/', (req, res) => {

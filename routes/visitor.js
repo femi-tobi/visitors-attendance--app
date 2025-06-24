@@ -433,8 +433,8 @@ router.get('/respond', async (req, res) => {
       const statusEmoji = status === 'allowed' ? '✅' : '❌';
 
       // Emit real-time notification to admins
-      if (req.io) {
-        req.io.emit('visit-status', {
+      if (io) {
+        io.emit('visit-status', {
           staff: visitor.staff_email,
           visitor: visitor.name,
           status: statusText
@@ -531,53 +531,28 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
-module.exports = (req, res, next) => {
-  const io = req.io;
-  // All route definitions go here, replacing 'router' with 'express.Router()' as needed
+module.exports = (io) => {
   const express = require('express');
   const router = express.Router();
-  // ... existing code ...
+  // ... all route definitions ...
 
-  // Response handler
+  // In /respond route, replace req.io with io
   router.get('/respond', async (req, res) => {
-    try {
-      const { email, status } = req.query;
-
-      if (!email || !['allowed', 'denied'].includes(status)) {
-        return res.status(400).send("Invalid response link.");
+    // ... existing code ...
+    if (visitDetails.length > 0) {
+      const visitor = visitDetails[0];
+      const statusText = status === 'allowed' ? 'APPROVED' : 'DENIED';
+      // Emit real-time notification to admins
+      if (io) {
+        io.emit('visit-status', {
+          staff: visitor.staff_email,
+          visitor: visitor.name,
+          status: statusText
+        });
       }
-
       // ... existing code ...
-
-      // Get visitor details to send notification
-      const [visitDetails] = await db.promise().query(`
-        SELECT v.name, v.email, v.phone, vs.reason, vs.staff_email
-        FROM visits vs 
-        JOIN visitors v ON vs.visitor_id = v.id 
-        WHERE vs.staff_email = ? 
-        ORDER BY vs.id DESC 
-        LIMIT 1
-      `, [email]);
-
-      if (visitDetails.length > 0) {
-        const visitor = visitDetails[0];
-        const statusText = status === 'allowed' ? 'APPROVED' : 'DENIED';
-        // Emit real-time notification to admins
-        if (io) {
-          io.emit('visit-status', {
-            staff: visitor.staff_email,
-            visitor: visitor.name,
-            status: statusText
-          });
-        }
-        // ... existing code ...
-      }
-
-      res.render('response', { status, config });
-    } catch (error) {
-      console.error('Response error:', error);
-      res.status(500).send("An error occurred while processing your response.");
     }
+    // ... existing code ...
   });
 
   // ... existing code ...
