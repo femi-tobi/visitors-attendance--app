@@ -613,8 +613,8 @@ module.exports = (io) => {
     `);
 
       res.render('dashboard', { visits });
-    } catch (error)
-// ... existing code ...
+    } catch (error) {
+      console.error('Dashboard error:', error);
       res.status(500).send('An error occurred while loading the dashboard.');
     }
   });
