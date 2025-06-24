@@ -508,7 +508,7 @@ module.exports = (io) => {
       await db
         .promise()
         .query(
-          'UPDATE visits SET status = ? WHERE staff_email = ? ORDER BY id DESC LIMIT 1',
+          'UPDATE visits SET status = ? WHERE id = (SELECT id FROM (SELECT id FROM visits WHERE staff_email = ? ORDER BY id DESC LIMIT 1) AS sub)',
           [status, email]
         );
 
