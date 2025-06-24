@@ -531,15 +531,6 @@ module.exports = (io) => {
         const statusColor = status === 'allowed' ? '#4CAF50' : '#f44336';
         const statusEmoji = status === 'allowed' ? '✅' : '❌';
 
-        // Emit real-time notification to admins
-        if (io) {
-          io.emit('visit-status', {
-            staff: visitor.staff_email,
-            visitor: visitor.name,
-            status: statusText,
-          });
-        }
-
         // Send notification email to visitor
         const visitorMailOptions = {
           from: process.env.EMAIL_USER || 'your-email@gmail.com',
