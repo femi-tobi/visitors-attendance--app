@@ -5,6 +5,8 @@ const config = require('./config');
 const visitorRoutes = require('./routes/visitor');
 const adminRoutes = require('./routes/admin');
 const session = require('express-session');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 
@@ -38,7 +40,12 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Routes
-app.use('/visitor', visitorRoutes);
+const server = http.createServer(app);
+const io = new Server(server);
+app.use('/visitor', (req, res, next) => {
+  req.io = io;
+  require('./routes/visitor')(req, res, next);
+});
 app.use('/admin', adminRoutes);
 
 app.get('/', (req, res) => {
@@ -58,7 +65,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = config.server.port || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Visit http://localhost:${PORT} to access the application`);
 });
