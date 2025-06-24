@@ -379,4 +379,71 @@ router.post('/visit/:id/tag', isAdmin, async (req, res) => {
   }
 });
 
+// Staff management - list, add, edit
+router.get('/staff', isAdmin, async (req, res) => {
+  try {
+    const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name ASC');
+    let formData = null;
+    if (req.query.edit) {
+      const [editStaff] = await db.promise().query('SELECT * FROM staff WHERE id = ?', [req.query.edit]);
+      if (editStaff.length > 0) formData = editStaff[0];
+    }
+    res.render('admin/staff', { staff, formData, errors: [] });
+  } catch (error) {
+    console.error('Error loading staff:', error);
+    res.status(500).render('error', { message: 'Failed to load staff', error: error.message });
+  }
+});
+
+// Add new staff
+router.post('/staff', isAdmin, async (req, res) => {
+  const { name, email } = req.body;
+  const errors = [];
+  if (!name || !email) errors.push({ msg: 'Name and email are required.' });
+  if (errors.length) {
+    const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name ASC');
+    return res.render('admin/staff', { staff, formData: req.body, errors });
+  }
+  try {
+    await db.promise().query('INSERT INTO staff (name, email) VALUES (?, ?)', [name, email]);
+    res.redirect('/admin/staff');
+  } catch (error) {
+    errors.push({ msg: error.code === 'ER_DUP_ENTRY' ? 'Email already exists.' : error.message });
+    const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name ASC');
+    res.render('admin/staff', { staff, formData: req.body, errors });
+  }
+});
+
+// Update staff
+router.post('/staff/:id', isAdmin, async (req, res) => {
+  const { name, email } = req.body;
+  const { id } = req.params;
+  const errors = [];
+  if (!name || !email) errors.push({ msg: 'Name and email are required.' });
+  if (errors.length) {
+    const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name ASC');
+    return res.render('admin/staff', { staff, formData: { id, name, email }, errors });
+  }
+  try {
+    await db.promise().query('UPDATE staff SET name = ?, email = ? WHERE id = ?', [name, email, id]);
+    res.redirect('/admin/staff');
+  } catch (error) {
+    errors.push({ msg: error.code === 'ER_DUP_ENTRY' ? 'Email already exists.' : error.message });
+    const [staff] = await db.promise().query('SELECT * FROM staff ORDER BY name ASC');
+    res.render('admin/staff', { staff, formData: { id, name, email }, errors });
+  }
+});
+
+// Delete staff
+router.post('/staff/:id/delete', isAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.promise().query('DELETE FROM staff WHERE id = ?', [id]);
+    res.redirect('/admin/staff');
+  } catch (error) {
+    console.error('Error deleting staff:', error);
+    res.status(500).render('error', { message: 'Failed to delete staff', error: error.message });
+  }
+});
+
 module.exports = router;
