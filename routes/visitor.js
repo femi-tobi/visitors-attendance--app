@@ -26,13 +26,16 @@ module.exports = (io) => {
     max: 100, // limit each IP to 100 requests per windowMs
   });
 
-  // Nodemailer config
+  // Nodemailer config with timeout for Railway compatibility
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER || 'your-email@gmail.com',
       pass: process.env.EMAIL_PASS || 'your-app-specific-password',
     },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
   });
 
   // Validation middleware for new visitors
@@ -336,9 +339,34 @@ module.exports = (io) => {
             ],
           };
 
-          await transporter.sendMail(mailOptions);
+          // Try to send email, but don't fail registration if email fails
+          console.log(`📧 Attempting to send email to: ${staff_email}`);
+          try {
+            await Promise.race([
+              transporter.sendMail(mailOptions),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Email timeout')), 15000)
+              )
+            ]);
+            console.log('✅ ============================================');
+            console.log('✅ EMAIL SENT SUCCESSFULLY');
+            console.log(`✅ Recipient: ${staff_email}`);
+            console.log(`✅ Visitor: ${name}`);
+            console.log('✅ ============================================');
+          } catch (emailError) {
+            console.error('❌ ============================================');
+            console.error('❌ EMAIL SENDING FAILED (Registration still successful)');
+            console.error(`❌ Recipient: ${staff_email}`);
+            console.error(`❌ Visitor: ${name}`);
+            console.error(`❌ Error: ${emailError.message}`);
+            console.error('❌ ============================================');
+            // Don't throw - allow registration to continue
+          }
 
-          res.json({ success: true, message: 'Registration successful' });
+          res.json({ 
+            success: true, 
+            message: 'Registration successful'
+          });
         } catch (dbError) {
           console.error('Database or file system error:', dbError);
           res.status(500).json({
@@ -457,7 +485,30 @@ module.exports = (io) => {
           attachments: attachments,
         };
 
-        await transporter.sendMail(mailOptions);
+        // Try to send email, but don't fail registration if email fails  
+        console.log(`📧 Attempting to send email to: ${staff_email}`);
+        try {
+          await Promise.race([
+            transporter.sendMail(mailOptions),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Email timeout')), 15000)
+            )
+          ]);
+          console.log('✅ ============================================');
+          console.log('✅ EMAIL SENT SUCCESSFULLY (Returning Visitor)');
+          console.log(`✅ Recipient: ${staff_email}`);
+          console.log(`✅ Visitor: ${visitor[0].name}`);
+          console.log('✅ ============================================');
+        } catch (emailError) {
+          console.error('❌ ============================================');
+          console.error('❌ EMAIL SENDING FAILED (Registration still successful)');
+          console.error(`❌ Recipient: ${staff_email}`);
+          console.error(`❌ Visitor: ${visitor[0].name}`);
+          console.error(`❌ Error: ${emailError.message}`);
+          console.error('❌ ============================================');
+          // Don't throw - allow registration to continue
+        }
+
         res.json({ success: true, message: 'Registration successful' });
       } catch (error) {
         console.error('Registration error:', error);
