@@ -52,7 +52,6 @@ app.get('/', (req, res) => {
 
 app.post('/submit', (req, res) => {
   const { name, email, phone, staff_email, reason } = req.body;
-  console.log('Visitor submitted:', { name, email, phone, staff_email, reason });
   res.send('Form submitted successfully');
 });
 

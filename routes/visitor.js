@@ -141,7 +141,6 @@ module.exports = (io) => {
       try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-          console.log('Validation errors:', errors.array());
           return res.status(400).json({
             success: false,
             errors: errors.array(),
@@ -149,7 +148,6 @@ module.exports = (io) => {
           });
         }
 
-        console.log('Received registration data:', req.body);
         const {
           name,
           email,
@@ -224,12 +222,10 @@ module.exports = (io) => {
           const [existingVisitor] = await db
             .promise()
             .query('SELECT id FROM visitors WHERE email = ?', [email]);
-          console.log('Existing visitor check:', existingVisitor);
 
           let visitorId;
           if (existingVisitor.length) {
             visitorId = existingVisitor[0].id;
-            console.log('Updating existing visitor:', visitorId);
             // Update visitor info
             await db
               .promise()
@@ -245,7 +241,6 @@ module.exports = (io) => {
                 ]
               );
           } else {
-            console.log('Creating new visitor');
             // Create new visitor
             const [result] = await db
               .promise()
@@ -261,11 +256,9 @@ module.exports = (io) => {
                 ]
               );
             visitorId = result.insertId;
-            console.log('New visitor created with ID:', visitorId);
           }
 
           // Create visit record
-          console.log('Creating visit record');
           const [visitResult] = await db
             .promise()
             .query(
@@ -345,7 +338,6 @@ module.exports = (io) => {
 
           await transporter.sendMail(mailOptions);
 
-          console.log('Registration successful');
           res.json({ success: true, message: 'Registration successful' });
         } catch (dbError) {
           console.error('Database or file system error:', dbError);
@@ -371,24 +363,8 @@ module.exports = (io) => {
     validateReturningVisitor,
     async (req, res) => {
       try {
-        console.log('Returning visitor registration data received:', req.body);
-        console.log(
-          'visitor_id:',
-          req.body.visitor_id,
-          'type:',
-          typeof req.body.visitor_id
-        );
-        console.log(
-          'reason:',
-          req.body.reason,
-          'length:',
-          req.body.reason ? req.body.reason.length : 0
-        );
-        console.log('staff_email:', req.body.staff_email);
-
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-          console.log('Validation errors for returning visitor:', errors.array());
           return res.status(400).json({
             success: false,
             errors: errors.array(),
@@ -498,11 +474,6 @@ module.exports = (io) => {
       if (!email || !['allowed', 'denied'].includes(status)) {
         return res.status(400).send('Invalid response link.');
       }
-
-      console.log('Response handler called with:', { email, status });
-      console.log('Current baseUrl:', config.app.baseUrl);
-      console.log('Request headers:', req.headers.host);
-      console.log('Request protocol:', req.protocol);
 
       // Update visit status
       await db

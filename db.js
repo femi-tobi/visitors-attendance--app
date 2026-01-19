@@ -1,38 +1,40 @@
 require('dotenv').config();
 const mysql = require('mysql2');
 
-const db = mysql.createConnection({
+// Use connection pool for better stability with remote databases
+const pool = mysql.createPool({
   host: process.env.DB_HOST || 'tramway.proxy.rlwy.net',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || 'qmXVvvEmWvavzTdcXiFdjqvILiVWWmMz',
   database: process.env.DB_NAME || 'railway',
-  port: process.env.DB_PORT || 27380
+  port: process.env.DB_PORT || 27380,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+  connectTimeout: 60000, // 60 seconds
+  acquireTimeout: 60000,
+  timeout: 60000
 });
 
-db.connect((err) => {
+// Test the database connection
+pool.getConnection((err, connection) => {
   if (err) {
-    console.error('Error connecting to MySQL:', err);
-    throw err;
+    console.error('Error connecting to MySQL:', err.message);
+    console.error('Please check your Railway database credentials and network connection');
+    return;
   }
-  console.log('MySQL Connected');
+  console.log('✅ MySQL Connected successfully to Railway database');
+  connection.release();
 });
 
-module.exports = db;
-
-const connection = mysql.createConnection({
-  host: 'tramway.proxy.rlwy.net',
-  user: 'root',
-  password: 'qmXVvvEmWvavzTdcXiFdjqvILiVWWmMz',
-  database: 'railway',
-  port: 27380,
-});
-
-connection.connect((err) => {
-  if (err) {
-    console.error('Error connecting to MySQL:', err);
-    throw err;
+// Handle pool errors
+pool.on('error', (err) => {
+  console.error('MySQL Pool Error:', err);
+  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+    console.error('⚠️ Database connection was lost. Pool will reconnect automatically.');
   }
-  console.log('Connected to Railway MySQL database');
 });
 
-module.exports = connection;
+module.exports = pool;
