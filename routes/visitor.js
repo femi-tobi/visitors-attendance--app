@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail'); // SendGrid instead of nodemailer
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const config = require('../config');
@@ -26,17 +26,14 @@ module.exports = (io) => {
     max: 100, // limit each IP to 100 requests per windowMs
   });
 
-  // Nodemailer config with timeout for Railway compatibility
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER || 'your-email@gmail.com',
-      pass: process.env.EMAIL_PASS || 'your-app-specific-password',
-    },
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-  });
+  // SendGrid configuration
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
+  
+  // Email sender details
+  const emailFrom = {
+    email: process.env.SENDGRID_FROM_EMAIL || 'maynbaker2025@gmail.com',
+    name: process.env.SENDGRID_FROM_NAME || 'Visitor Management System'
+  };
 
   // Validation middleware for new visitors
   const validateNewVisitor = [
@@ -296,10 +293,13 @@ module.exports = (io) => {
               );
           }
 
-          // Send email
-          const mailOptions = {
-            from: process.env.EMAIL_USER || 'your-email@gmail.com',
+
+          // Prepare email with SendGrid
+          const photoDataBase64 = fs.readFileSync(photoPath).toString('base64');
+          
+          const mailData = {
             to: staff_email,
+            from: emailFrom,
             subject: 'New Visitor Request',
             html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -311,19 +311,11 @@ module.exports = (io) => {
             <p><strong>Reason:</strong><br>${reason}</p>
             <p><em>Visitor's photo is attached to this email.</em></p>
             <div style="margin: 30px 0;">
-              <a href="${
-                config.app.baseUrl
-              }/visitor/respond?email=${encodeURIComponent(
-              staff_email
-            )}&status=allowed" 
+              <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                  style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                  ✅ Allow
               </a>
-              <a href="${
-                config.app.baseUrl
-              }/visitor/respond?email=${encodeURIComponent(
-              staff_email
-            )}&status=denied" 
+              <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
                  style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                  ❌ Deny
               </a>
@@ -332,24 +324,25 @@ module.exports = (io) => {
         `,
             attachments: [
               {
+                content: photoDataBase64,
                 filename: `visitor_${name.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`,
-                path: photoPath,
-                cid: 'visitor-photo',
-              },
-            ],
+                type: 'image/jpeg',
+                disposition: 'attachment'
+              }
+            ]
           };
 
-          // Try to send email, but don't fail registration if email fails
-          console.log(`📧 Attempting to send email to: ${staff_email}`);
+          // Try to send email with SendGrid, but don't fail registration if email fails
+          console.log(`📧 Attempting to send email to: ${staff_email} via SendGrid`);
           try {
             await Promise.race([
-              transporter.sendMail(mailOptions),
+              sgMail.send(mailData),
               new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Email timeout')), 15000)
+                setTimeout(() => reject(new Error('Email timeout')), 10000)
               )
             ]);
             console.log('✅ ============================================');
-            console.log('✅ EMAIL SENT SUCCESSFULLY');
+            console.log('✅ EMAIL SENT SUCCESSFULLY via SendGrid');
             console.log(`✅ Recipient: ${staff_email}`);
             console.log(`✅ Visitor: ${name}`);
             console.log('✅ ============================================');
@@ -359,6 +352,9 @@ module.exports = (io) => {
             console.error(`❌ Recipient: ${staff_email}`);
             console.error(`❌ Visitor: ${name}`);
             console.error(`❌ Error: ${emailError.message}`);
+            if (emailError.response) {
+              console.error(`❌ SendGrid Response:`, emailError.response.body);
+            }
             console.error('❌ ============================================');
             // Don't throw - allow registration to continue
           }
@@ -422,7 +418,7 @@ module.exports = (io) => {
           );
 
         // Prepare email attachments if photo exists
-        const attachments = [];
+        const sendgridAttachments = [];
         if (visitor[0].photo_path) {
           const photoPath = path.join(
             __dirname,
@@ -431,71 +427,56 @@ module.exports = (io) => {
             visitor[0].photo_path
           );
           if (fs.existsSync(photoPath)) {
-            attachments.push({
-              filename: `visitor_${visitor[0].name.replace(
-                /[^a-zA-Z0-9]/g,
-                '_'
-              )}.jpg`,
-              path: photoPath,
-              cid: 'visitor-photo',
+            const photoDataBase64 = fs.readFileSync(photoPath).toString('base64');
+            sendgridAttachments.push({
+              content: photoDataBase64,
+              filename: `visitor_${visitor[0].name.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`,
+              type: 'image/jpeg',
+              disposition: 'attachment'
             });
           }
         }
 
-        // Send email
-        const mailOptions = {
-          from: process.env.EMAIL_USER || 'your-email@gmail.com',
+        // Prepare email with SendGrid
+        const mailData = {
           to: staff_email,
+          from: emailFrom,
           subject: 'New Visitor Request',
           html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>New Visitor Request</h2>
-          <p><strong>${
-            visitor[0].name
-          }</strong> would like to meet with you.</p>
+          <p><strong>${visitor[0].name}</strong> would like to meet with you.</p>
           <p><strong>Contact:</strong><br>
           Email: ${visitor[0].email}<br>
           Phone: ${visitor[0].phone}</p>
           <p><strong>Reason:</strong><br>${reason}</p>
-          ${
-            attachments.length > 0
-              ? "<p><em>Visitor's photo is attached to this email.</em></p>"
-              : ''
-          }
+          ${sendgridAttachments.length > 0 ? "<p><em>Visitor's photo is attached to this email.</em></p>" : ''}
           <div style="margin: 30px 0;">
-            <a href="${
-              config.app.baseUrl
-            }/visitor/respond?email=${encodeURIComponent(
-            staff_email
-          )}&status=allowed" 
+            <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                ✅ Allow
             </a>
-            <a href="${
-              config.app.baseUrl
-            }/visitor/respond?email=${encodeURIComponent(
-            staff_email
-          )}&status=denied" 
+            <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=denied" 
                style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                ❌ Deny
             </a>
           </div>
         </div>
       `,
-          attachments: attachments,
+          attachments: sendgridAttachments
         };
 
-        // Try to send email, but don't fail registration if email fails  
-        console.log(`📧 Attempting to send email to: ${staff_email}`);
+        // Try to send email with SendGrid, but don't fail registration if email fails  
+        console.log(`📧 Attempting to send email to: ${staff_email} via SendGrid`);
         try {
           await Promise.race([
-            transporter.sendMail(mailOptions),
+            sgMail.send(mailData),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Email timeout')), 15000)
+              setTimeout(() => reject(new Error('Email timeout')), 10000)
             )
           ]);
           console.log('✅ ============================================');
-          console.log('✅ EMAIL SENT SUCCESSFULLY (Returning Visitor)');
+          console.log('✅ EMAIL SENT SUCCESSFULLY via SendGrid (Returning Visitor)');
           console.log(`✅ Recipient: ${staff_email}`);
           console.log(`✅ Visitor: ${visitor[0].name}`);
           console.log('✅ ============================================');
@@ -505,6 +486,9 @@ module.exports = (io) => {
           console.error(`❌ Recipient: ${staff_email}`);
           console.error(`❌ Visitor: ${visitor[0].name}`);
           console.error(`❌ Error: ${emailError.message}`);
+          if (emailError.response) {
+            console.error(`❌ SendGrid Response:`, emailError.response.body);
+          }
           console.error('❌ ============================================');
           // Don't throw - allow registration to continue
         }
