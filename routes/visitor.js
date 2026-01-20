@@ -590,6 +590,27 @@ module.exports = (io) => {
     res.send('Check-in successful');
   });
 
+  // Checkout route - Sign out a visitor
+  router.post('/checkout/:id', async (req, res) => {
+    try {
+      const visitId = req.params.id;
+      
+      // Update the visit record with checkout time
+      await db
+        .promise()
+        .query(
+          'UPDATE visits SET check_out_time = NOW() WHERE id = ?',
+          [visitId]
+        );
+
+      // Redirect back to admin dashboard
+      res.redirect('/admin');
+    } catch (error) {
+      console.error('Checkout error:', error);
+      res.status(500).send('An error occurred during checkout.');
+    }
+  });
+
   // Dashboard (protected route)
   router.get('/dashboard', async (req, res) => {
     try {
