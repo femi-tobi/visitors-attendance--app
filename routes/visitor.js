@@ -562,7 +562,7 @@ module.exports = (io) => {
         await transporter.sendMail(visitorMailOptions);
 
         res.render('response', {
-          status: statusText,
+          status: status,  // Pass original status ('allowed' or 'denied') instead of statusText
           status_color: statusColor,
           message: `The visitor has been notified of your decision.`,
         });
