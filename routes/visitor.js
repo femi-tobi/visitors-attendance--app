@@ -537,9 +537,9 @@ module.exports = (io) => {
         const statusColor = status === 'allowed' ? '#4CAF50' : '#f44336';
         const statusEmoji = status === 'allowed' ? '✅' : '❌';
 
-        // Send notification email to visitor
+        // Send notification email to visitor using SendGrid
         const visitorMailOptions = {
-          from: process.env.EMAIL_USER || 'your-email@gmail.com',
+          from: emailFrom,
           to: visitor.email,
           subject: `Your Visit Request has been ${statusText}`,
           html: `
@@ -559,7 +559,15 @@ module.exports = (io) => {
           </div>
         `,
         };
-        await transporter.sendMail(visitorMailOptions);
+        
+        // Send email via SendGrid with error handling
+        try {
+          await sgMail.send(visitorMailOptions);
+          console.log(`✅ Visitor notification email sent to: ${visitor.email}`);
+        } catch (emailError) {
+          console.error(`❌ Failed to send visitor notification email: ${emailError.message}`);
+          // Continue even if email fails - don't block the response page
+        }
 
         res.render('response', {
           status: status,  // Pass original status ('allowed' or 'denied') instead of statusText
