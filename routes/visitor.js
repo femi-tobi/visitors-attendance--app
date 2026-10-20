@@ -36,9 +36,8 @@ module.exports = (io) => {
     name: process.env.SENDGRID_FROM_NAME || 'Visitor Management System'
   };
 
-  // Provider: EMAIL_PROVIDER=smtp|sendgrid. Defaults to sendgrid when an API key exists, else smtp.
-  const emailProvider = (process.env.EMAIL_PROVIDER ||
-    (process.env.SENDGRID_API_KEY ? 'sendgrid' : 'smtp')).toLowerCase();
+  // Provider: SMTP (Nodemailer) by default. Set EMAIL_PROVIDER=sendgrid to use SendGrid.
+  const emailProvider = (process.env.EMAIL_PROVIDER || 'smtp').toLowerCase();
   const smtpTransport = emailProvider === 'smtp'
     ? nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
