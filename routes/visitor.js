@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const sgMail = require('@sendgrid/mail');
-const nodemailer = require('nodemailer');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const config = require('../config');
@@ -27,46 +25,40 @@ module.exports = (io) => {
     max: 100, // limit each IP to 100 requests per windowMs
   });
 
-  // SendGrid configuration
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
-  
-  // Email sender details
+  // Email via Brevo's HTTPS API (works on Railway; no SMTP needed)
   const emailFrom = {
-    email: process.env.SENDGRID_FROM_EMAIL || 'maynbaker2025@gmail.com',
-    name: process.env.SENDGRID_FROM_NAME || 'Visitor Management System'
+    email: process.env.BREVO_FROM_EMAIL || process.env.EMAIL_USER || 'maynbaker2025@gmail.com',
+    name: process.env.BREVO_FROM_NAME || 'Visitor Management System'
   };
+  console.log(`Email provider: brevo (sender: ${emailFrom.email}, key set: ${!!process.env.BREVO_API_KEY})`);
 
-  // Provider: SMTP (Nodemailer) by default. Set EMAIL_PROVIDER=sendgrid to use SendGrid.
-  const emailProvider = (process.env.EMAIL_PROVIDER || 'smtp').toLowerCase();
-  const smtpTransport = emailProvider === 'smtp'
-    ? nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '465', 10),
-        secure: (process.env.SMTP_SECURE || 'true') === 'true',
-        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000
-      })
-    : null;
-  console.log(`Email provider: ${emailProvider}`);
-
-  // Send via the configured provider. Takes SendGrid-shaped message data.
+  // Takes a message {to, subject, html, attachments:[{content(base64), filename}]}
   async function sendMail(msg) {
-    if (emailProvider !== 'smtp') return sgMail.send(msg);
-    const fromAddr = process.env.EMAIL_USER;
-    return smtpTransport.sendMail({
-      from: { name: emailFrom.name, address: fromAddr },
-      to: msg.to,
+    const payload = {
+      sender: { name: emailFrom.name, email: emailFrom.email },
+      to: [{ email: msg.to }],
       subject: msg.subject,
-      html: msg.html,
-      attachments: (msg.attachments || []).map(a => ({
-        filename: a.filename,
-        content: a.content,
-        encoding: 'base64',
-        contentType: a.type
-      }))
+      htmlContent: msg.html
+    };
+    if (msg.attachments && msg.attachments.length) {
+      payload.attachment = msg.attachments.map(a => ({ name: a.filename, content: a.content }));
+    }
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': process.env.BREVO_API_KEY || '',
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      body: JSON.stringify(payload)
     });
+    const text = await res.text();
+    if (!res.ok) {
+      const err = new Error(`Brevo ${res.status}`);
+      err.response = { body: text };
+      throw err;
+    }
+    return text;
   }
 
   // Validation middleware for new visitors
@@ -328,7 +320,7 @@ module.exports = (io) => {
           }
 
 
-          // Prepare email with SendGrid
+          // Prepare email with Brevo
           const photoDataBase64 = fs.readFileSync(photoPath).toString('base64');
           
           const mailData = {
@@ -366,8 +358,8 @@ module.exports = (io) => {
             ]
           };
 
-          // Try to send email with SendGrid, but don't fail registration if email fails
-          console.log(`📧 Attempting to send email to: ${staff_email} via SendGrid`);
+          // Try to send email with Brevo, but don't fail registration if email fails
+          console.log(`📧 Attempting to send email to: ${staff_email} via Brevo`);
           try {
             await Promise.race([
               sendMail(mailData),
@@ -376,7 +368,7 @@ module.exports = (io) => {
               )
             ]);
             console.log('✅ ============================================');
-            console.log('✅ EMAIL SENT SUCCESSFULLY via SendGrid');
+            console.log('✅ EMAIL SENT SUCCESSFULLY via Brevo');
             console.log(`✅ Recipient: ${staff_email}`);
             console.log(`✅ Visitor: ${name}`);
             console.log('✅ ============================================');
@@ -387,7 +379,7 @@ module.exports = (io) => {
             console.error(`❌ Visitor: ${name}`);
             console.error(`❌ Error: ${emailError.message}`);
             if (emailError.response) {
-              console.error(`❌ SendGrid Response:`, emailError.response.body);
+              console.error(`❌ Brevo Response:`, emailError.response.body);
             }
             console.error('❌ ============================================');
             // Don't throw - allow registration to continue
@@ -452,7 +444,7 @@ module.exports = (io) => {
           );
 
         // Prepare email attachments if photo exists
-        const sendgridAttachments = [];
+        const emailAttachments = [];
         if (visitor[0].photo_path) {
           const photoPath = path.join(
             __dirname,
@@ -462,7 +454,7 @@ module.exports = (io) => {
           );
           if (fs.existsSync(photoPath)) {
             const photoDataBase64 = fs.readFileSync(photoPath).toString('base64');
-            sendgridAttachments.push({
+            emailAttachments.push({
               content: photoDataBase64,
               filename: `visitor_${visitor[0].name.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`,
               type: 'image/jpeg',
@@ -471,7 +463,7 @@ module.exports = (io) => {
           }
         }
 
-        // Prepare email with SendGrid
+        // Prepare email with Brevo
         const mailData = {
           to: staff_email,
           from: emailFrom,
@@ -484,7 +476,7 @@ module.exports = (io) => {
           Email: ${visitor[0].email}<br>
           Phone: ${visitor[0].phone}</p>
           <p><strong>Reason:</strong><br>${reason}</p>
-          ${sendgridAttachments.length > 0 ? "<p><em>Visitor's photo is attached to this email.</em></p>" : ''}
+          ${emailAttachments.length > 0 ? "<p><em>Visitor's photo is attached to this email.</em></p>" : ''}
           <div style="margin: 30px 0;">
             <a href="${config.app.baseUrl}/visitor/respond?email=${encodeURIComponent(staff_email)}&status=allowed" 
                style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
@@ -497,11 +489,11 @@ module.exports = (io) => {
           </div>
         </div>
       `,
-          attachments: sendgridAttachments
+          attachments: emailAttachments
         };
 
-        // Try to send email with SendGrid, but don't fail registration if email fails  
-        console.log(`📧 Attempting to send email to: ${staff_email} via SendGrid`);
+        // Try to send email with Brevo, but don't fail registration if email fails  
+        console.log(`📧 Attempting to send email to: ${staff_email} via Brevo`);
         try {
           await Promise.race([
             sendMail(mailData),
@@ -510,7 +502,7 @@ module.exports = (io) => {
             )
           ]);
           console.log('✅ ============================================');
-          console.log('✅ EMAIL SENT SUCCESSFULLY via SendGrid (Returning Visitor)');
+          console.log('✅ EMAIL SENT SUCCESSFULLY via Brevo (Returning Visitor)');
           console.log(`✅ Recipient: ${staff_email}`);
           console.log(`✅ Visitor: ${visitor[0].name}`);
           console.log('✅ ============================================');
@@ -521,7 +513,7 @@ module.exports = (io) => {
           console.error(`❌ Visitor: ${visitor[0].name}`);
           console.error(`❌ Error: ${emailError.message}`);
           if (emailError.response) {
-            console.error(`❌ SendGrid Response:`, emailError.response.body);
+            console.error(`❌ Brevo Response:`, emailError.response.body);
           }
           console.error('❌ ============================================');
           // Don't throw - allow registration to continue
@@ -571,7 +563,7 @@ module.exports = (io) => {
         const statusColor = status === 'allowed' ? '#4CAF50' : '#f44336';
         const statusEmoji = status === 'allowed' ? '✅' : '❌';
 
-        // Send notification email to visitor using SendGrid
+        // Send notification email to visitor using Brevo
         const visitorMailOptions = {
           from: emailFrom,
           to: visitor.email,
@@ -594,7 +586,7 @@ module.exports = (io) => {
         `,
         };
         
-        // Send email via SendGrid with error handling
+        // Send email via Brevo with error handling
         try {
           await sendMail(visitorMailOptions);
           console.log(`✅ Visitor notification email sent to: ${visitor.email}`);
