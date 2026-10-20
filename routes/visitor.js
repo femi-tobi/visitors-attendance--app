@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const sgMail = require('@sendgrid/mail'); // SendGrid instead of nodemailer
+const sgMail = require('@sendgrid/mail');
+const nodemailer = require('nodemailer');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const config = require('../config');
@@ -34,6 +35,40 @@ module.exports = (io) => {
     email: process.env.SENDGRID_FROM_EMAIL || 'maynbaker2025@gmail.com',
     name: process.env.SENDGRID_FROM_NAME || 'Visitor Management System'
   };
+
+  // Provider: EMAIL_PROVIDER=smtp|sendgrid. Defaults to sendgrid when an API key exists, else smtp.
+  const emailProvider = (process.env.EMAIL_PROVIDER ||
+    (process.env.SENDGRID_API_KEY ? 'sendgrid' : 'smtp')).toLowerCase();
+  const smtpTransport = emailProvider === 'smtp'
+    ? nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '465', 10),
+        secure: (process.env.SMTP_SECURE || 'true') === 'true',
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
+      })
+    : null;
+  console.log(`Email provider: ${emailProvider}`);
+
+  // Send via the configured provider. Takes SendGrid-shaped message data.
+  async function sendMail(msg) {
+    if (emailProvider !== 'smtp') return sgMail.send(msg);
+    const fromAddr = process.env.EMAIL_USER;
+    return smtpTransport.sendMail({
+      from: { name: emailFrom.name, address: fromAddr },
+      to: msg.to,
+      subject: msg.subject,
+      html: msg.html,
+      attachments: (msg.attachments || []).map(a => ({
+        filename: a.filename,
+        content: a.content,
+        encoding: 'base64',
+        contentType: a.type
+      }))
+    });
+  }
 
   // Validation middleware for new visitors
   const validateNewVisitor = [
@@ -336,7 +371,7 @@ module.exports = (io) => {
           console.log(`📧 Attempting to send email to: ${staff_email} via SendGrid`);
           try {
             await Promise.race([
-              sgMail.send(mailData),
+              sendMail(mailData),
               new Promise((_, reject) => 
                 setTimeout(() => reject(new Error('Email timeout')), 10000)
               )
@@ -470,7 +505,7 @@ module.exports = (io) => {
         console.log(`📧 Attempting to send email to: ${staff_email} via SendGrid`);
         try {
           await Promise.race([
-            sgMail.send(mailData),
+            sendMail(mailData),
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Email timeout')), 10000)
             )
@@ -562,7 +597,7 @@ module.exports = (io) => {
         
         // Send email via SendGrid with error handling
         try {
-          await sgMail.send(visitorMailOptions);
+          await sendMail(visitorMailOptions);
           console.log(`✅ Visitor notification email sent to: ${visitor.email}`);
         } catch (emailError) {
           console.error(`❌ Failed to send visitor notification email: ${emailError.message}`);
